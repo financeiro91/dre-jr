@@ -48,7 +48,7 @@ body{background:var(--jr-gelo);color:var(--jr-dark);font-family:'Open Sans',sans
 #login-screen{
   min-height:100vh;display:flex;align-items:center;justify-content:center;
   background:var(--jr-red3);
-  position:relative;overflow:hidden;
+  position:fixed;inset:0;z-index:9999;overflow:auto;
 }
 #login-screen::before{
   content:'';position:absolute;inset:0;
@@ -490,7 +490,7 @@ tbody tr:last-child td{border-bottom:none;}
 </div>
 
 <!-- ══ APP ════════════════════════════════════════════════════════ -->
-<div id="app" style="display:flex;flex-direction:column;">
+<div id="app" style="display:none;flex-direction:column;">
   <div class="topbar">
     <div class="topbrand">
       <div class="topbrand-box">
