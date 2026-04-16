@@ -173,10 +173,13 @@ body{background:var(--jr-gelo);color:var(--jr-dark);font-family:'Open Sans',sans
 .period-row{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:8px;}
 .perbtn{
   background:var(--jr-white);border:1.5px solid var(--jr-gelo3);border-radius:2px;
-  color:var(--jr-gray);font-size:0.72rem;font-weight:700;padding:5px 10px;cursor:pointer;
+  color:var(--jr-gray);font-size:0.72rem;font-weight:700;padding:5px 10px;cursor:grab;
   transition:all .2s;font-family:'Oswald',sans-serif;letter-spacing:.05em;text-transform:uppercase;
-  white-space:nowrap;position:relative;
+  white-space:nowrap;position:relative;user-select:none;
 }
+.perbtn:active{cursor:grabbing;}
+.perbtn.dragging{opacity:.4;border-style:dashed;}
+.perbtn.drag-over{border-color:var(--jr-gold);background:#FFF8E1;transform:scale(1.04);}
 .perbtn.active{background:var(--jr-red);border-color:var(--jr-red);color:#fff;}
 .perbtn.p-plan{border-color:var(--jr-gold3);color:var(--jr-gold3);}
 .perbtn.p-meta{border-color:#8B6914;color:#8B6914;}
@@ -1352,14 +1355,37 @@ function init(){
 
 // ══ PERIOD BUTTONS ══
 const tCls={plan:'p-plan',real:'',meta:'p-meta','acum-plan':'p-acum','acum-real':'p-acum'};
+
+// Column order — persisted in localStorage
+let COL_ORDER=JSON.parse(localStorage.getItem('jr4_col_order')||'null');
+function getOrderedCols(){
+  const keys=Object.keys(PD);
+  if(!COL_ORDER) return keys;
+  const ordered=COL_ORDER.filter(k=>keys.includes(k));
+  const newKeys=keys.filter(k=>!ordered.includes(k));
+  return [...ordered,...newKeys];
+}
+function saveColOrder(){
+  COL_ORDER=getOrderedCols();
+  localStorage.setItem('jr4_col_order',JSON.stringify(COL_ORDER));
+}
+
 function buildPerBtns(){
   const div=document.getElementById('per-btns');
-  div.innerHTML=Object.keys(PD).map(p=>{
+  const cols=getOrderedCols();
+  div.innerHTML=cols.map(p=>{
     const cls=tCls[PD[p]._t]||'';
     const hid=HC.includes(p)?'p-hidden':'';
     const pp=p.replace(/'/g,'&#39;');
-    return`<div class="perbtn ${cls} ${hid}${p===activePer?' active':''}" onclick="selPer(this,'${pp}')">
-      ${p}<button class="hide-x" onclick="event.stopPropagation();toggleHide('${pp}')" title="${HC.includes(p)?'Mostrar':'Ocultar'}">${HC.includes(p)?'👁':'×'}</button>
+    return`<div class="perbtn ${cls} ${hid}${p===activePer?' active':''}"
+      draggable="true" data-col="${pp}"
+      onclick="selPer(this,'${pp}')"
+      ondragstart="onColDragStart(event,'${pp}')"
+      ondragover="onColDragOver(event)"
+      ondragleave="onColDragLeave(event)"
+      ondrop="onColDrop(event,'${pp}')"
+      ondragend="onColDragEnd(event)">
+      <span style="cursor:grab;margin-right:4px;opacity:.4;font-size:.7rem">⠿</span>${p}<button class="hide-x" onclick="event.stopPropagation();toggleHide('${pp}')" title="${HC.includes(p)?'Mostrar':'Ocultar'}">${HC.includes(p)?'👁':'×'}</button>
     </div>`;
   }).join('');
   // hidden bar
@@ -1368,7 +1394,38 @@ function buildPerBtns(){
   hb.style.display=HC.length?'flex':'none';
   // fill nm-copy
   const sel=document.getElementById('nm-copy');
-  if(sel)sel.innerHTML='<option value="">— Coluna em branco —</option>'+Object.keys(PD).map(p=>`<option value="${p}">${p}</option>`).join('');
+  if(sel)sel.innerHTML='<option value="">— Coluna em branco —</option>'+cols.map(p=>`<option value="${p}">${p}</option>`).join('');
+}
+
+// ── Drag-and-drop para reordenar colunas ───────────────────────────────
+let _dragCol=null;
+function onColDragStart(e,col){
+  _dragCol=col;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed='move';
+}
+function onColDragOver(e){
+  e.preventDefault();
+  e.dataTransfer.dropEffect='move';
+  e.currentTarget.classList.add('drag-over');
+}
+function onColDragLeave(e){e.currentTarget.classList.remove('drag-over');}
+function onColDrop(e,targetCol){
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if(!_dragCol||_dragCol===targetCol)return;
+  const order=getOrderedCols();
+  const fi=order.indexOf(_dragCol),ti=order.indexOf(targetCol);
+  if(fi<0||ti<0)return;
+  order.splice(fi,1);order.splice(ti,0,_dragCol);
+  COL_ORDER=order;saveColOrder();
+  buildPerBtns();buildDRE();
+  toast(`Coluna "${_dragCol}" reposicionada.`);
+}
+function onColDragEnd(e){
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.perbtn').forEach(b=>b.classList.remove('drag-over','dragging'));
+  _dragCol=null;
 }
 // Columns that cannot be deleted (core planilha data)
 const PROTECTED_COLS=new Set([
@@ -1424,7 +1481,7 @@ function buildKPI(){
 
 // ══ DRE TABLE ══
 function buildDRE(){
-  const vis=Object.keys(PD).filter(p=>!HC.includes(p));
+  const vis=getOrderedCols().filter(p=>!HC.includes(p));
   const tcls={'plan':'th-plan','real':'th-real','meta':'th-meta','acum-plan':'th-acum','acum-real':'th-acum'};
   document.getElementById('dre-h').innerHTML='<tr><th>Indicador / Linha</th>'+
     vis.map(p=>`<th class="${tcls[PD[p]._t]||''}">${p}</th>`).join('')+'</tr>';
