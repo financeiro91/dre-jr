@@ -748,58 +748,80 @@ document.addEventListener('keydown',e=>{
 // ── PENDING users — shared via JSONBin (cross-device) ───────────────────
 // JSONBin.io gratuito: armazena JSON acessível de qualquer dispositivo
 // Bin ID e API Key configurados abaixo
-const JSONBIN_BIN = '69e12074aaba88219708022b';
-const JSONBIN_KEY = '$2a$10$ex5TRR8NiNjjh6DclpEkZ.TBesNdhhwAoVg3BsBIFwqUCWfHy935K';
+// ══════════════════════════════════════════════════════════════
+// SUPABASE — banco de dados compartilhado em tempo real
+// ══════════════════════════════════════════════════════════════
+const SB_URL = 'https://ctrnxkarpbdyaapeqakd.supabase.co';
+const SB_KEY = 'sb_publishable_-R8tG7fB1drFKTJlaAxp6A_ieNbOUg_';
 
+// Generic Supabase REST helper
+async function sbFetch(path, opts={}){
+  const res = await fetch(`${SB_URL}/rest/v1/${path}`, {
+    ...opts,
+    headers:{
+      'apikey': SB_KEY,
+      'Authorization': `Bearer ${SB_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': opts.prefer||'',
+      ...(opts.headers||{})
+    }
+  });
+  if(!res.ok){
+    const err = await res.text();
+    throw new Error(`Supabase error: ${res.status} ${err}`);
+  }
+  const txt = await res.text();
+  return txt ? JSON.parse(txt) : null;
+}
+
+// ── PENDING ──────────────────────────────────────────────────
 async function getPending(){
   try{
-    const r=await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN}/latest`,{
-      headers:{'X-Master-Key':JSONBIN_KEY,'X-Bin-Meta':'false'}
-    });
-    if(!r.ok)throw new Error();
-    const data=await r.json();
-    return data.pending||{};
-  }catch{
-    // fallback to localStorage if JSONBin not configured
-    return JSON.parse(localStorage.getItem('jr4_pending')||'{}');
-  }
+    const rows = await sbFetch('pendentes?select=*');
+    const obj = {};
+    (rows||[]).forEach(r=>{ obj[r.username]={label:r.nome,pass:r.senha,ts:r.solicitado_em,status:'pending'}; });
+    return obj;
+  }catch{ return JSON.parse(localStorage.getItem('jr4_pending')||'{}'); }
 }
 async function savePending(obj){
-  try{
-    await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN}`,{
-      method:'PUT',
-      headers:{'Content-Type':'application/json','X-Master-Key':JSONBIN_KEY},
-      body:JSON.stringify({pending:obj})
-    });
-  }catch{}
-  // always save locally as backup
-  localStorage.setItem('jr4_pending',JSON.stringify(obj));
+  // savePending receives full object — used only for deletes (approve/reject handle their own)
+  localStorage.setItem('jr4_pending', JSON.stringify(obj));
 }
-async function getApprovedUsers(){
-  try{
-    const r=await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN}/latest`,{
-      headers:{'X-Master-Key':JSONBIN_KEY,'X-Bin-Meta':'false'}
-    });
-    if(!r.ok)throw new Error();
-    const data=await r.json();
-    return data.users||{};
-  }catch{
-    return JSON.parse(localStorage.getItem('jr4_users')||'{}');
-  }
+async function addPending(username, nome, senha){
+  await sbFetch('pendentes', {
+    method:'POST',
+    prefer:'resolution=merge-duplicates',
+    body: JSON.stringify({username, nome, senha})
+  });
+  const p = JSON.parse(localStorage.getItem('jr4_pending')||'{}');
+  p[username]={label:nome,pass:senha,ts:new Date().toLocaleString('pt-BR'),status:'pending'};
+  localStorage.setItem('jr4_pending', JSON.stringify(p));
 }
-async function saveApprovedUsers(obj){
-  try{
-    const pending=await getPending();
-    await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN}`,{
-      method:'PUT',
-      headers:{'Content-Type':'application/json','X-Master-Key':JSONBIN_KEY},
-      body:JSON.stringify({pending,users:obj})
-    });
-  }catch{}
-  localStorage.setItem('jr4_users',JSON.stringify(obj));
+async function deletePending(username){
+  await sbFetch(`pendentes?username=eq.${encodeURIComponent(username)}`, {method:'DELETE'});
 }
 
-function getPendingSync(){return JSON.parse(localStorage.getItem('jr4_pending')||'{}');}
+// ── APPROVED USERS ────────────────────────────────────────────
+async function getApprovedUsers(){
+  try{
+    const rows = await sbFetch('usuarios?select=*&status=eq.active');
+    const obj = {};
+    (rows||[]).forEach(r=>{ obj[r.username]={pass:r.senha, role:r.role, label:r.nome}; });
+    return obj;
+  }catch{ return JSON.parse(localStorage.getItem('jr4_users')||'{}'); }
+}
+async function saveApprovedUsers(obj){
+  localStorage.setItem('jr4_users', JSON.stringify(obj));
+}
+async function addApprovedUser(username, nome, senha, role){
+  await sbFetch('usuarios', {
+    method:'POST',
+    prefer:'resolution=merge-duplicates',
+    body: JSON.stringify({username, nome, senha, role, status:'active'})
+  });
+}
+
+function getPendingSync(){return JSON.parse(localStorage.getItem('jr4_pending')||'{}')}
 function savePendingSync(obj){localStorage.setItem('jr4_pending',JSON.stringify(obj));}
 
 async function doLogin(){
@@ -862,9 +884,16 @@ async function doRegister(){
     btn.disabled=false;btn.textContent='Solicitar Acesso';return;
   }
 
-  // Save as pending in shared storage
-  pending[user]={label:nome,pass,ts:new Date().toLocaleString('pt-BR'),status:'pending'};
-  await savePending(pending);
+  // Save as pending in Supabase
+  try{
+    await addPending(user, nome, pass);
+  }catch(e){
+    console.warn('Supabase addPending error:',e);
+    // fallback: save locally
+    const p=JSON.parse(localStorage.getItem('jr4_pending')||'{}');
+    p[user]={label:nome,pass,ts:new Date().toLocaleString('pt-BR'),status:'pending'};
+    localStorage.setItem('jr4_pending',JSON.stringify(p));
+  }
 
   btn.textContent='Enviando e-mail...';
 
@@ -934,14 +963,13 @@ async function approveUser(u){
   if(!p)return;
   const role=document.getElementById(`role-${u}`).value;
   const roleLabel={viewer:'Visualizador',editor:'Editor',admin:'Administrador'};
-  // Add to shared approved users
+  // Add to Supabase approved users
+  try{ await addApprovedUser(u, p.label, p.pass, role); }catch(e){console.warn('approve user err:',e);}
+  // Remove from Supabase pending
+  try{ await deletePending(u); }catch(e){console.warn('delete pending err:',e);}
+  // Update local cache
   const sharedUsers=await getApprovedUsers();
-  sharedUsers[u]={pass:p.pass,role,label:p.label};
-  await saveApprovedUsers(sharedUsers);
   USERS=Object.assign({},DEFAULT_USERS,sharedUsers);
-  // Remove from pending
-  delete pending[u];
-  await savePending(pending);
   pushH({type:'approve',user:CU.label,ts:ts(),icon:'✅',target:p.label,role:roleLabel[role]});
   updatePendingBadge();
   renderPendingTab();
@@ -953,8 +981,11 @@ async function rejectUser(u){
   const p=pending[u];
   if(!p)return;
   if(!confirm(`Rejeitar o cadastro de "${p.label}" (@${u})?\n\nO usuário não poderá acessar o sistema.`))return;
-  delete pending[u];
-  await savePending(pending);
+  try{ await deletePending(u); }catch(e){console.warn('reject pending err:',e);}
+  // Update local cache
+  const pending2=JSON.parse(localStorage.getItem('jr4_pending')||'{}');
+  delete pending2[u];
+  localStorage.setItem('jr4_pending',JSON.stringify(pending2));
   pushH({type:'reject',user:CU.label,ts:ts(),icon:'❌',target:p.label});
   updatePendingBadge();
   renderPendingTab();
@@ -1183,7 +1214,7 @@ const PD_DEF={
     endliq:-19.824,oban:-17.121,atfx:0,roi:0,bkneg:-5062431.62},
 };
 
-// Persist layer
+// ══ PERSIST LAYER — Supabase + localStorage cache ══
 let SE=JSON.parse(localStorage.getItem('jr4_e')||'{}');
 let SX=JSON.parse(localStorage.getItem('jr4_x')||'{}');
 let SR=JSON.parse(localStorage.getItem('jr4_r')||'[]');
@@ -1193,6 +1224,72 @@ const PD=Object.assign({},PD_DEF,SX);
 Object.keys(SE).forEach(p=>{if(PD[p])Object.assign(PD[p],SE[p]);});
 if(SR.length) SR.forEach(r=>DROWS.push(r));
 let activePer='Fev/26 Real';
+
+// Save DRE edit to Supabase + localStorage cache
+const save=()=>{
+  localStorage.setItem('jr4_e',JSON.stringify(SE));
+  // async fire-and-forget to Supabase
+  Object.keys(SE).forEach(periodo=>{
+    Object.keys(SE[periodo]).forEach(campo=>{
+      sbFetch('dre_dados',{
+        method:'POST',
+        prefer:'resolution=merge-duplicates',
+        body:JSON.stringify({periodo,campo,valor:SE[periodo][campo]})
+      }).catch(()=>{});
+    });
+  });
+};
+const saveX=()=>{
+  localStorage.setItem('jr4_x',JSON.stringify(SX));
+  // Save custom periods to Supabase
+  Object.keys(SX).forEach(periodo=>{
+    Object.keys(SX[periodo]).forEach(campo=>{
+      sbFetch('dre_dados',{
+        method:'POST',
+        prefer:'resolution=merge-duplicates',
+        body:JSON.stringify({periodo,campo,valor:SX[periodo][campo]})
+      }).catch(()=>{});
+    });
+  });
+};
+const saveR=()=>{localStorage.setItem('jr4_r',JSON.stringify(SR));};
+const saveHC=()=>{localStorage.setItem('jr4_hc',JSON.stringify(HC));};
+function pushH(h){
+  AH.unshift(h);
+  if(AH.length>1000)AH=AH.slice(0,1000);
+  localStorage.setItem('jr4_h',JSON.stringify(AH));
+  // Save to Supabase async
+  sbFetch('historico',{
+    method:'POST',
+    body:JSON.stringify({tipo:h.type,usuario:h.user,descricao:h})
+  }).catch(()=>{});
+}
+
+// Load DRE edits from Supabase on init
+async function loadDREFromSupabase(){
+  try{
+    const rows=await sbFetch('dre_dados?select=*');
+    if(!rows||!rows.length)return;
+    rows.forEach(({periodo,campo,valor})=>{
+      if(!PD[periodo])return;
+      PD[periodo][campo]=valor;
+      if(!SE[periodo])SE[periodo]={};
+      SE[periodo][campo]=valor;
+    });
+    localStorage.setItem('jr4_e',JSON.stringify(SE));
+    recalcAcum();
+  }catch(e){console.warn('loadDRE error:',e);}
+}
+
+// Load history from Supabase
+async function loadHistoryFromSupabase(){
+  try{
+    const rows=await sbFetch('historico?select=*&order=criado_em.desc&limit=200');
+    if(!rows||!rows.length)return;
+    AH=rows.map(r=>r.descricao||{});
+    localStorage.setItem('jr4_h',JSON.stringify(AH));
+  }catch(e){console.warn('loadHistory error:',e);}
+}
 
 // ══ ACUM RECALC ══
 function recalcAcum(){
@@ -1230,11 +1327,6 @@ function recomputePct(per){
 }
 
 // ══ SAVE ══
-const save=()=>{localStorage.setItem('jr4_e',JSON.stringify(SE));};
-const saveX=()=>{localStorage.setItem('jr4_x',JSON.stringify(SX));};
-const saveR=()=>{localStorage.setItem('jr4_r',JSON.stringify(SR));};
-const saveHC=()=>{localStorage.setItem('jr4_hc',JSON.stringify(HC));};
-function pushH(h){AH.unshift(h);if(AH.length>1000)AH=AH.slice(0,1000);localStorage.setItem('jr4_h',JSON.stringify(AH));}
 function toast(m,t=''){const el=document.getElementById('toast');el.textContent=m;el.className='show '+(t==='error'?'err':'');setTimeout(()=>el.className='',2800);}
 
 
@@ -1254,6 +1346,8 @@ function init(){
   const tab=document.getElementById('tab-pending');
   if(tab) tab.style.display=CU?.role==='admin'?'':'none';
   updatePendingBadge();
+  // Load latest edits from Supabase in background
+  loadDREFromSupabase().then(()=>{buildKPI();buildDRE();});
 }
 
 // ══ PERIOD BUTTONS ══
@@ -1844,7 +1938,8 @@ function confEditPlanoOld(){}
 function editPlanoStatus(ri,val){savePlanoField(ri,5,val);}
 
 // ══ HISTORY ══
-function renderHist(){
+async function renderHist(){
+  await loadHistoryFromSupabase();
   const list=document.getElementById('hlist');
   if(!AH.length){list.innerHTML='<div class="empty">Sem registros de alteração ainda.</div>';return;}
   list.innerHTML=AH.map(h=>{
