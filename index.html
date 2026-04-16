@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JR Pavimentação — DRE 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Open+Sans:wght@400;500;600&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+  // EmailJS — configure com seus IDs em https://www.emailjs.com
+  // Service ID e Template ID são criados na conta EmailJS gratuita
+  const EMAILJS_SERVICE  = 'service_jrdre';
+  const EMAILJS_TEMPLATE = 'jxsnrqw';
+  const EMAILJS_PUBLIC   = 'Wkdv_gdFdh5YCp9ix';
+  (function(){try{emailjs.init({publicKey:EMAILJS_PUBLIC});}catch(e){}})();
+</script>
+<style>
+/* ══ JR BRAND — inspirado em jrsantafe.com.br ══════════════════════════
+   Site usa: fundo branco, header vermelho escuro #8B1A22, dourado #C9A227,
+   fonte display Oswald bold, corpo Open Sans, layout limpo/industrial      */
+:root{
+  --jr-red:    #8B1A22;
+  --jr-red2:   #6d141a;
+  --jr-red3:   #4a0d11;
+  --jr-gold:   #C9A227;
+  --jr-gold2:  #a8851f;
+  --jr-gold3:  #7a6018;
+  --jr-white:  #FFFFFF;
+  --jr-gelo:   #F5F3EF;
+  --jr-gelo2:  #EAE7E1;
+  --jr-gelo3:  #D8D4CC;
+  --jr-dark:   #1A1A1A;
+  --jr-dark2:  #2C2C2C;
+  --jr-dark3:  #3D3D3D;
+  --jr-gray:   #6B6B6B;
+  --jr-gray2:  #9A9A9A;
+  --jr-gray3:  #BDBDBD;
+  --pos:       #2E7D32;
+  --pos-bg:    #E8F5E9;
+  --neg:       #C62828;
+  --neg-bg:    #FFEBEE;
+  --fs:        14px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--jr-gelo);color:var(--jr-dark);font-family:'Open Sans',sans-serif;font-size:var(--fs);min-height:100vh;}
+
+/* ── LOGIN ────────────────────────────────────────────────────── */
+#login-screen{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:var(--jr-red3);
+  position:relative;overflow:hidden;
+}
+#login-screen::before{
+  content:'';position:absolute;inset:0;
+  background:url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='60' height='60' fill='none'/%3E%3Cpath d='M0 60L60 0M-10 10L10-10M50 70L70 50' stroke='rgba(201,162,39,0.06)' stroke-width='1'/%3E%3C/svg%3E");
+}
+.lcard{
+  background:var(--jr-white);border-top:5px solid var(--jr-gold);
+  border-radius:4px;padding:48px 44px;width:440px;position:relative;z-index:1;
+  box-shadow:0 24px 60px rgba(0,0,0,.5);
+}
+.llogo{text-align:center;margin-bottom:36px;}
+.llogo-icon{
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--jr-red);width:72px;height:72px;border-radius:4px;margin-bottom:14px;
+}
+.llogo-icon span{font-family:'Oswald',sans-serif;font-size:1.9rem;font-weight:700;color:var(--jr-white);letter-spacing:.05em;}
+.llogo-icon em{color:var(--jr-gold);font-style:normal;}
+.lbrand{font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:600;color:var(--jr-red);letter-spacing:.12em;text-transform:uppercase;}
+.lsub{font-size:0.7rem;color:var(--jr-gray);letter-spacing:.2em;text-transform:uppercase;margin-top:4px;}
+.lbar{width:40px;height:3px;background:var(--jr-gold);margin:10px auto 0;border-radius:1px;}
+.fg{margin-bottom:16px;}
+.fg label{display:block;font-size:0.7rem;font-weight:600;color:var(--jr-dark3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:7px;}
+.fg input,.fg select{
+  width:100%;background:var(--jr-gelo);border:1.5px solid var(--jr-gelo3);border-radius:3px;
+  padding:11px 14px;color:var(--jr-dark);font-family:'Open Sans',sans-serif;font-size:0.88rem;
+  transition:border-color .2s;
+}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--jr-gold);background:#fff;}
+.lbtn{
+  width:100%;background:var(--jr-red);color:#fff;border:none;border-radius:3px;
+  padding:13px;font-family:'Oswald',sans-serif;font-weight:600;font-size:1rem;
+  letter-spacing:.15em;text-transform:uppercase;cursor:pointer;transition:background .2s;margin-top:8px;
+}
+.lbtn:hover{background:var(--jr-red2);}
+.lbtn.secondary{background:transparent;border:1.5px solid var(--jr-gold2);color:var(--jr-gold3);margin-top:10px;}
+.lbtn.secondary:hover{background:var(--jr-gold);color:var(--jr-dark);}
+.lerr{color:var(--neg);font-size:0.78rem;margin-top:10px;text-align:center;display:none;}
+.lsucc{color:var(--pos);font-size:0.78rem;margin-top:10px;text-align:center;display:none;}
+.llink{text-align:center;margin-top:18px;font-size:0.78rem;color:var(--jr-gray);}
+.llink a{color:var(--jr-red);font-weight:600;cursor:pointer;text-decoration:underline;}
+
+/* ── APP SHELL ────────────────────────────────────────────────── */
+#app{display:none;min-height:100vh;flex-direction:column;}
+
+/* TOP BAR — matches JR site header */
+.topbar{
+  background:var(--jr-red);border-bottom:4px solid var(--jr-gold);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px;height:60px;position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 12px rgba(0,0,0,.3);
+}
+.topbrand{display:flex;align-items:center;gap:12px;}
+.topbrand-box{
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);
+  border-radius:3px;padding:4px 10px;
+}
+.topbrand-txt{font-family:'Oswald',sans-serif;font-size:1.25rem;font-weight:700;color:#fff;letter-spacing:.12em;}
+.topbrand-txt em{color:var(--jr-gold);font-style:normal;}
+.topbrand-sub{font-size:0.62rem;color:rgba(255,255,255,.6);letter-spacing:.15em;text-transform:uppercase;margin-top:1px;}
+.topact{display:flex;align-items:center;gap:10px;}
+.ubadge{
+  display:flex;align-items:center;gap:7px;background:rgba(0,0,0,.2);
+  border:1px solid rgba(255,255,255,.25);border-radius:3px;padding:5px 12px;
+  font-size:0.78rem;color:rgba(255,255,255,.9);font-weight:500;
+}
+.udot{width:6px;height:6px;border-radius:50%;background:var(--jr-gold);}
+.fsctrl{display:flex;align-items:center;gap:4px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.2);border-radius:3px;padding:3px 8px;}
+.fsctrl span{font-size:0.7rem;color:rgba(255,255,255,.6);font-weight:600;}
+.fsbtn{background:none;border:none;color:rgba(255,255,255,.8);cursor:pointer;font-size:1rem;padding:0 3px;line-height:1;}
+.fsbtn:hover{color:#fff;}
+.bsm{
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);border-radius:3px;
+  color:#fff;font-size:0.75rem;font-weight:600;padding:6px 13px;cursor:pointer;transition:all .2s;
+  font-family:'Open Sans',sans-serif;letter-spacing:.04em;
+}
+.bsm:hover{background:rgba(255,255,255,.2);}
+.bsm.gold{background:var(--jr-gold);border-color:var(--jr-gold);color:var(--jr-dark);}
+.bsm.gold:hover{background:var(--jr-gold2);}
+
+/* TABS */
+.tabbar{
+  background:var(--jr-dark2);
+  display:flex;padding:0 20px;overflow-x:auto;border-bottom:1px solid var(--jr-dark3);
+}
+.tab{
+  padding:12px 22px;font-family:'Oswald',sans-serif;font-size:0.82rem;font-weight:500;
+  letter-spacing:.1em;color:var(--jr-gray2);cursor:pointer;border-bottom:3px solid transparent;
+  transition:all .2s;white-space:nowrap;text-transform:uppercase;
+}
+.tab:hover{color:var(--jr-gelo3);}
+.tab.active{color:var(--jr-gold);border-bottom-color:var(--jr-gold);}
+
+/* CONTENT */
+.carea{padding:20px 24px;flex:1;}
+
+/* PAGE HEADER */
+.phdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px;border-bottom:2px solid var(--jr-gelo2);padding-bottom:14px;}
+.ptitle{font-family:'Oswald',sans-serif;font-size:1.55rem;font-weight:700;letter-spacing:.05em;color:var(--jr-red);line-height:1.1;}
+.ptitle em{color:var(--jr-gold2);font-style:normal;}
+.ptitle small{display:block;font-family:'Open Sans',sans-serif;font-size:0.68rem;font-weight:600;color:var(--jr-gray);letter-spacing:.15em;text-transform:uppercase;margin-top:2px;}
+.phdr-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+
+/* KPI CARDS */
+.kgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:12px;margin-bottom:22px;}
+.kcard{
+  background:var(--jr-white);border:1px solid var(--jr-gelo3);border-left:4px solid var(--jr-gelo3);
+  border-radius:3px;padding:14px 16px;transition:box-shadow .2s;
+}
+.kcard:hover{box-shadow:0 2px 10px rgba(0,0,0,.08);}
+.kcard.k-gold{border-left-color:var(--jr-gold);}
+.kcard.k-red{border-left-color:var(--jr-red);}
+.kcard.k-green{border-left-color:var(--pos);}
+.klbl{font-size:0.62rem;font-weight:700;color:var(--jr-gray);text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px;}
+.kval{font-family:'Oswald',sans-serif;font-size:1.6rem;font-weight:700;color:var(--jr-dark);line-height:1;}
+.ksub{font-size:0.68rem;color:var(--jr-gray);margin-top:4px;}
+.kbadge{display:inline-block;padding:2px 8px;border-radius:2px;font-size:0.62rem;font-weight:700;margin-top:6px;letter-spacing:.04em;text-transform:uppercase;}
+.kbadge.b-green{background:var(--pos-bg);color:var(--pos);}
+.kbadge.b-red{background:var(--neg-bg);color:var(--neg);}
+.kbadge.b-gold{background:#FFF8E1;color:var(--jr-gold3);}
+
+/* PERIOD TOOLBAR */
+.period-row{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:8px;}
+.perbtn{
+  background:var(--jr-white);border:1.5px solid var(--jr-gelo3);border-radius:2px;
+  color:var(--jr-gray);font-size:0.72rem;font-weight:700;padding:5px 10px;cursor:pointer;
+  transition:all .2s;font-family:'Oswald',sans-serif;letter-spacing:.05em;text-transform:uppercase;
+  white-space:nowrap;position:relative;
+}
+.perbtn.active{background:var(--jr-red);border-color:var(--jr-red);color:#fff;}
+.perbtn.p-plan{border-color:var(--jr-gold3);color:var(--jr-gold3);}
+.perbtn.p-meta{border-color:#8B6914;color:#8B6914;}
+.perbtn.p-acum{border-color:#2E7D32;color:#2E7D32;}
+.perbtn.p-hidden{opacity:.4;text-decoration:line-through;}
+.perbtn:hover:not(.active){background:var(--jr-gelo);border-color:var(--jr-dark3);color:var(--jr-dark);}
+.hide-x{
+  position:absolute;top:-5px;right:-5px;width:14px;height:14px;border-radius:50%;
+  background:var(--jr-dark3);border:none;color:#fff;font-size:0.6rem;cursor:pointer;
+  display:none;align-items:center;justify-content:center;line-height:1;
+}
+.perbtn:hover .hide-x{display:flex;}
+.btn-add{
+  background:#FFF8E1;border:1.5px dashed var(--jr-gold2);border-radius:2px;
+  color:var(--jr-gold3);font-size:0.72rem;font-weight:700;padding:5px 11px;cursor:pointer;
+  font-family:'Oswald',sans-serif;letter-spacing:.05em;text-transform:uppercase;transition:all .2s;
+}
+.btn-add:hover{background:#FFF3CC;}
+.btn-del{
+  background:#FFEBEE;border:1.5px solid #FFCDD2;border-radius:2px;
+  color:var(--neg);font-size:0.72rem;font-weight:700;padding:5px 10px;cursor:pointer;
+  font-family:'Oswald',sans-serif;letter-spacing:.05em;
+}
+
+/* HIDDEN BAR */
+.hbar{
+  display:none;background:#E8F5E9;border:1px solid #A5D6A7;border-radius:3px;
+  padding:7px 12px;font-size:0.75rem;color:#2E7D32;margin-bottom:8px;
+  align-items:center;gap:8px;flex-wrap:wrap;
+}
+.hbar span{font-weight:700;}
+.unhide{
+  background:#C8E6C9;border:1px solid #A5D6A7;border-radius:2px;
+  color:#1B5E20;font-size:0.7rem;font-weight:600;padding:2px 8px;cursor:pointer;
+}
+
+/* FILTER BAR */
+.fbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center;}
+.srch{
+  background:var(--jr-white);border:1.5px solid var(--jr-gelo3);border-radius:3px;
+  padding:7px 12px;color:var(--jr-dark);font-size:0.82rem;width:220px;
+  font-family:'Open Sans',sans-serif;
+}
+.srch:focus{outline:none;border-color:var(--jr-gold);}
+select.sel{
+  background:var(--jr-white);border:1.5px solid var(--jr-gelo3);border-radius:3px;
+  padding:7px 12px;color:var(--jr-dark);font-size:0.82rem;cursor:pointer;
+}
+select.sel:focus{outline:none;border-color:var(--jr-gold);}
+.tbtn{
+  background:var(--jr-white);border:1.5px solid var(--jr-gelo3);border-radius:3px;
+  color:var(--jr-dark3);font-size:0.75rem;font-weight:600;padding:6px 13px;cursor:pointer;
+  transition:all .2s;font-family:'Open Sans',sans-serif;
+}
+.tbtn:hover{border-color:var(--jr-gold);color:var(--jr-red);}
+.tbtn.active{background:#FFF8E1;border-color:var(--jr-gold);color:var(--jr-gold3);}
+
+/* ── MAIN TABLE ────────────────────────────────────────────────── */
+.twrap{overflow-x:auto;border:1px solid var(--jr-gelo3);border-radius:3px;box-shadow:0 1px 6px rgba(0,0,0,.06);}
+table{width:100%;border-collapse:collapse;}
+
+/* TH */
+thead th{
+  background:var(--jr-dark);color:var(--jr-gray2);font-family:'Oswald',sans-serif;font-weight:500;
+  padding:10px 12px;text-align:right;white-space:nowrap;
+  border-bottom:3px solid var(--jr-dark3);
+  font-size:0.78rem;letter-spacing:.06em;text-transform:uppercase;
+  position:sticky;top:0;z-index:3;
+}
+thead th:first-child{
+  text-align:left;min-width:252px;
+  position:sticky;left:0;top:0;background:var(--jr-dark);z-index:5;
+  border-bottom-color:var(--jr-gold);color:var(--jr-gelo3);
+}
+thead th.th-plan{background:#1a1500;border-bottom-color:var(--jr-gold3);color:#c8a940;}
+thead th.th-real{background:#1a0304;border-bottom-color:#7d2a2a;color:#c07070;}
+thead th.th-meta{background:#131000;border-bottom-color:#7a6018;color:#b09830;}
+thead th.th-acum{background:#001208;border-bottom-color:#2E7D32;color:#5EAD62;}
+
+/* TD */
+tbody td{
+  padding:7px 12px;border-bottom:1px solid var(--jr-gelo2);text-align:right;
+  font-family:'Roboto Mono',monospace;font-size:0.79rem;color:var(--jr-dark3);
+  white-space:nowrap;background:var(--jr-white);
+}
+tbody td:first-child{
+  text-align:left;color:var(--jr-dark);font-family:'Open Sans',sans-serif;font-size:0.83rem;
+  position:sticky;left:0;background:var(--jr-white);z-index:1;
+}
+tbody tr:hover td{background:var(--jr-gelo);}
+tbody tr:hover td:first-child{background:var(--jr-gelo);}
+tbody tr:last-child td{border-bottom:none;}
+
+/* Row types */
+.r-total td{
+  background:#FFF8E1 !important;border-top:2px solid var(--jr-gold3) !important;
+  font-weight:700;color:var(--jr-dark) !important;border-bottom:2px solid var(--jr-gold3) !important;
+}
+.r-total td:first-child{
+  color:var(--jr-red) !important;font-family:'Oswald',sans-serif !important;
+  font-size:0.88rem !important;font-weight:700;background:#FFF8E1 !important;
+}
+.r-pct td{
+  background:var(--jr-gelo) !important;
+  color:var(--jr-gray) !important;font-size:0.73rem !important;
+}
+.r-pct td:first-child{
+  color:var(--jr-gray) !important;font-family:'Open Sans',sans-serif !important;
+  font-size:0.76rem !important;padding-left:26px;background:var(--jr-gelo) !important;
+}
+.r-blank td{background:var(--jr-gelo2) !important;height:6px;padding:0 !important;}
+
+/* Value colors */
+.vpos{color:var(--pos) !important;font-weight:500;}
+.vneg{color:var(--neg) !important;font-weight:500;}
+
+/* ── CLICK-TO-EDIT ─────────────────────────────────────────── */
+/* Editable cell: hover shows dashed outline + pencil hint */
+.td-edit{
+  cursor:text;position:relative;transition:background .12s;
+}
+.td-edit:hover{
+  background:#FFFDE7 !important;
+  outline:1.5px dashed var(--jr-gold2);
+  outline-offset:-1px;
+}
+.td-edit:hover::after{
+  content:'✎';
+  position:absolute;top:3px;right:5px;
+  font-size:0.58rem;color:var(--jr-gold2);opacity:.65;pointer-events:none;
+}
+/* Row highlight when editing is active */
+.tr-editing td{background:#FFFEF7 !important;}
+.tr-editing td:first-child{background:#FFFEF7 !important;}
+/* Input inside cell — numbers (DRE/Balanço) */
+.ci{
+  background:#fff;border:1.5px solid var(--jr-gold);border-radius:2px;
+  color:var(--jr-dark);font-family:'Roboto Mono',monospace;font-size:0.82rem;
+  padding:4px 8px;width:130px;text-align:right;
+  box-shadow:0 0 0 3px rgba(201,162,39,.15);
+}
+.ci:focus{outline:none;}
+/* Input inside cell — text (Plano/Balanço) */
+.li{
+  background:#fff;border:1.5px solid var(--jr-gold);border-radius:2px;
+  color:var(--jr-dark);font-family:'Open Sans',sans-serif;font-size:0.83rem;
+  padding:4px 8px;width:100%;
+  box-shadow:0 0 0 3px rgba(201,162,39,.15);
+}
+.li:focus{outline:none;}
+.td-plano textarea.li{display:block;min-height:40px;resize:vertical;}
+/* Status dropdown inline */
+.sel-inline{
+  width:100%;background:#fff;border:1.5px solid var(--jr-gold2);border-radius:3px;
+  padding:4px 6px;color:var(--jr-dark);font-size:0.78rem;cursor:pointer;
+}
+.sel-inline:focus{outline:none;border-color:var(--jr-red);}
+
+/* ── HISTORY ─────────────────────────────────────────────────── */
+.hlist{display:flex;flex-direction:column;gap:8px;}
+.hitem{
+  background:var(--jr-white);border:1px solid var(--jr-gelo3);border-radius:3px;
+  padding:11px 15px;display:flex;align-items:flex-start;gap:12px;
+}
+.hico{width:30px;height:30px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:0.85rem;flex-shrink:0;}
+.hico.edit{background:#FFF8E1;}
+.hico.login,.hico.newcol,.hico.newrow{background:#E8F5E9;}
+.hico.logout,.hico.delcol{background:#FFEBEE;}
+.hbody{flex:1;font-size:0.82rem;color:var(--jr-dark);}
+.hbody strong{color:var(--jr-red);}
+.hmeta{font-size:0.7rem;color:var(--jr-gray);margin-top:2px;}
+.oldv{color:var(--neg);text-decoration:line-through;}
+.newv{color:var(--pos);font-weight:600;}
+.hts{font-family:'Roboto Mono',monospace;font-size:0.66rem;color:var(--jr-gray2);flex-shrink:0;}
+.empty{text-align:center;padding:48px;color:var(--jr-gray);font-size:0.88rem;}
+
+/* STATUS BADGES */
+.sb{display:inline-block;padding:2px 8px;border-radius:2px;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+.sb.s0{background:#E8F5E9;color:#2E7D32;}
+.sb.s1{background:#FFF8E1;color:#F57F17;}
+.sb.s2{background:#FFEBEE;color:#C62828;}
+.sb.s3{background:#FCE4EC;color:#880E4F;}
+.sb.s4{background:#F5F5F5;color:#616161;}
+.sb.s5{background:#ECEFF1;color:#546E7A;}
+
+/* ── MODAL ───────────────────────────────────────────────────── */
+.moverlay{position:fixed;inset:0;background:rgba(26,26,26,.65);z-index:200;display:flex;align-items:center;justify-content:center;animation:fi .15s;}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+.modal{
+  background:var(--jr-white);border-top:4px solid var(--jr-red);
+  border-radius:3px;padding:28px 32px;min-width:400px;max-width:92vw;animation:su .2s;
+  box-shadow:0 16px 48px rgba(0,0,0,.25);
+}
+@keyframes su{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+.mtitle{font-family:'Oswald',sans-serif;font-size:1.25rem;font-weight:700;color:var(--jr-red);letter-spacing:.06em;text-transform:uppercase;margin-bottom:20px;}
+.mtitle em{color:var(--jr-gold2);font-style:normal;}
+.mfg{margin-bottom:14px;}
+.mfg label{display:block;font-size:0.68rem;font-weight:700;color:var(--jr-gray);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;}
+.mfg input,.mfg select,.mfg textarea{
+  width:100%;background:var(--jr-gelo);border:1.5px solid var(--jr-gelo3);border-radius:2px;
+  padding:9px 12px;color:var(--jr-dark);font-size:0.85rem;font-family:'Open Sans',sans-serif;
+}
+.mfg input:focus,.mfg select:focus{outline:none;border-color:var(--jr-gold);}
+.mhint{font-size:0.75rem;color:var(--jr-gray);line-height:1.5;margin-bottom:14px;padding:10px 12px;background:var(--jr-gelo);border-left:3px solid var(--jr-gold);border-radius:0 2px 2px 0;}
+.mfooter{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;border-top:1px solid var(--jr-gelo2);padding-top:16px;}
+.bprim{background:var(--jr-red);color:#fff;border:none;border-radius:3px;padding:9px 20px;font-weight:700;font-size:0.82rem;cursor:pointer;font-family:'Oswald',sans-serif;letter-spacing:.1em;text-transform:uppercase;transition:background .2s;}
+.bprim:hover{background:var(--jr-red2);}
+.bghost{background:var(--jr-white);color:var(--jr-dark3);border:1.5px solid var(--jr-gelo3);border-radius:3px;padding:9px 18px;font-size:0.82rem;cursor:pointer;transition:all .2s;}
+.bghost:hover{border-color:var(--jr-dark3);}
+
+/* PENDING APPROVAL CARDS */
+.pcard{
+  background:var(--jr-white);border:1px solid var(--jr-gelo3);border-left:4px solid var(--jr-gold);
+  border-radius:3px;padding:18px 20px;margin-bottom:12px;
+  display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;
+}
+.pcard-info{flex:1;}
+.pcard-name{font-family:'Oswald',sans-serif;font-size:1.05rem;font-weight:600;color:var(--jr-dark);margin-bottom:4px;}
+.pcard-meta{font-size:0.78rem;color:var(--jr-gray);margin-bottom:10px;}
+.pcard-meta span{font-family:'Roboto Mono',monospace;color:var(--jr-dark3);}
+.pcard-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.pcard-actions select{
+  background:var(--jr-gelo);border:1.5px solid var(--jr-gelo3);border-radius:3px;
+  padding:7px 10px;font-size:0.8rem;color:var(--jr-dark);cursor:pointer;
+}
+.pcard-actions select:focus{outline:none;border-color:var(--jr-gold);}
+.btn-approve{background:var(--pos);color:#fff;border:none;border-radius:3px;padding:8px 16px;font-weight:700;font-size:0.8rem;cursor:pointer;font-family:'Oswald',sans-serif;letter-spacing:.08em;}
+.btn-approve:hover{background:#1B5E20;}
+.btn-reject{background:var(--jr-white);color:var(--neg);border:1.5px solid var(--neg);border-radius:3px;padding:8px 14px;font-size:0.8rem;cursor:pointer;font-weight:600;}
+.btn-reject:hover{background:var(--neg-bg);}
+.pempty{text-align:center;padding:48px;color:var(--jr-gray);font-size:0.9rem;}
+.pempty strong{display:block;font-size:1.1rem;margin-bottom:6px;color:var(--pos);}
+
+/* TOAST */
+#toast{
+  position:fixed;bottom:20px;right:20px;background:var(--jr-dark);border-left:4px solid var(--jr-gold);
+  border-radius:3px;padding:10px 18px;font-size:0.8rem;color:#fff;z-index:300;
+  transform:translateY(55px);opacity:0;transition:all .3s;box-shadow:0 4px 16px rgba(0,0,0,.3);
+}
+#toast.show{transform:translateY(0);opacity:1;}
+#toast.err{border-left-color:var(--neg);}
+
+@media(max-width:640px){.kgrid{grid-template-columns:1fr 1fr;}.lcard{width:94vw;padding:30px 20px;}.carea{padding:12px 10px;}}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN / REGISTER ══════════════════════════════════════════ -->
+<div id="login-screen">
+  <!-- LOGIN PANEL -->
+  <div class="lcard" id="panel-login">
+    <div class="llogo">
+      <div class="llogo-icon"><span>JR<em>.</em></span></div>
+      <div class="lbrand">JR Pavimentação e Construções</div>
+      <div class="lsub">Sistema Financeiro — DRE 2026</div>
+      <div class="lbar"></div>
+    </div>
+    <div class="fg"><label>Usuário</label><input type="text" id="iu" placeholder="seu.usuario" autocomplete="username"></div>
+    <div class="fg" style="position:relative">
+      <label>Senha</label>
+      <input type="password" id="ip" placeholder="••••••••" autocomplete="current-password">
+      <span onclick="togglePwd('ip',this)" style="position:absolute;right:12px;bottom:11px;cursor:pointer;font-size:1rem;color:var(--jr-gray)">👁</span>
+    </div>
+    <button class="lbtn" onclick="doLogin()">Entrar no Sistema</button>
+    <div class="lerr" id="lerr">Usuário ou senha inválidos.</div>
+    <div class="llink">Não tem acesso? <a onclick="showPanel('panel-register')">Criar cadastro</a></div>
+  </div>
+
+  <!-- REGISTER PANEL -->
+  <div class="lcard" id="panel-register" style="display:none">
+    <div class="llogo">
+      <div class="llogo-icon"><span>JR<em>.</em></span></div>
+      <div class="lbrand">Solicitar Acesso</div>
+      <div class="lsub">JR Sistema Financeiro — DRE 2026</div>
+      <div class="lbar"></div>
+    </div>
+    <div class="fg"><label>Nome completo</label><input type="text" id="rg-nome" placeholder="Ex: João da Silva"></div>
+    <div class="fg"><label>Usuário (sem espaços)</label><input type="text" id="rg-user" placeholder="joaosilva" oninput="this.value=this.value.toLowerCase().replace(/\s/g,'')"></div>
+    <div class="fg" style="position:relative">
+      <label>Senha</label>
+      <input type="password" id="rg-pass" placeholder="Mínimo 6 caracteres">
+      <span onclick="togglePwd('rg-pass',this)" style="position:absolute;right:12px;bottom:11px;cursor:pointer;font-size:1rem;color:var(--jr-gray)">👁</span>
+    </div>
+    <div class="fg" style="position:relative">
+      <label>Confirmar senha</label>
+      <input type="password" id="rg-pass2" placeholder="Repita a senha">
+      <span onclick="togglePwd('rg-pass2',this)" style="position:absolute;right:12px;bottom:11px;cursor:pointer;font-size:1rem;color:var(--jr-gray)">👁</span>
+    </div>
+    <button class="lbtn" id="rg-submit-btn" onclick="doRegister()">Solicitar Acesso</button>
+    <div class="lerr" id="rg-err" style="display:none"></div>
+    <div class="lsucc" id="rg-ok" style="display:none"></div>
+    <div class="llink">Já tem cadastro? <a onclick="showPanel('panel-login')">Fazer login</a></div>
+  </div>
+
+  <!-- PENDING PANEL -->
+  <div class="lcard" id="panel-pending" style="display:none">
+    <div class="llogo">
+      <div class="llogo-icon" style="background:var(--jr-gold3)"><span style="font-size:2rem">⏳</span></div>
+      <div class="lbrand" style="color:var(--jr-gold3)">Acesso Pendente</div>
+      <div class="lsub">Aguardando liberação</div>
+      <div class="lbar"></div>
+    </div>
+    <div style="text-align:center;padding:10px 0 20px;color:var(--jr-dark3);font-size:0.88rem;line-height:1.7">
+      Sua solicitação foi enviada para:<br>
+      <strong style="color:var(--jr-red)">financeiro@jrsantafe.com.br</strong><br><br>
+      O administrador irá analisar e liberar seu acesso em breve.<br>
+      Você será notificado quando o cadastro for aprovado.
+    </div>
+    <div class="llink"><a onclick="showPanel('panel-login')">← Voltar ao login</a></div>
+  </div>
+</div>
+
+<!-- ══ APP ════════════════════════════════════════════════════════ -->
+<div id="app" style="display:flex;flex-direction:column;">
+  <div class="topbar">
+    <div class="topbrand">
+      <div class="topbrand-box">
+        <div class="topbrand-txt">JR<em>.</em></div>
+      </div>
+      <div>
+        <div style="font-family:'Oswald',sans-serif;font-size:0.9rem;font-weight:600;color:#fff;letter-spacing:.08em;">JR Pavimentação e Construções</div>
+        <div class="topbrand-sub">Sistema Financeiro — DRE 2026</div>
+      </div>
+    </div>
+    <div class="topact">
+      <div class="fsctrl">
+        <span>A</span>
+        <button class="fsbtn" onclick="adjFont(-1)">−</button>
+        <button class="fsbtn" onclick="adjFont(1)">+</button>
+      </div>
+      <div class="ubadge"><div class="udot"></div><span id="curlbl">—</span></div>
+      <button class="bsm gold" onclick="exportCSV()">⬇ Exportar CSV</button>
+      <button class="bsm" onclick="doLogout()">Sair</button>
+    </div>
+  </div>
+
+  <div class="tabbar">
+    <div class="tab active" onclick="swTab(this,'t-dre')">DRE Principal</div>
+    <div class="tab" onclick="swTab(this,'t-bal')">Balanço Patrimonial</div>
+    <div class="tab" onclick="swTab(this,'t-plano')">Plano de Ação MASP</div>
+    <div class="tab" onclick="swTab(this,'t-hist')">Histórico</div>
+    <div class="tab" id="tab-pending" style="display:none" onclick="swTab(this,'t-pending')">
+      Cadastros Pendentes <span id="pending-badge" style="background:var(--jr-red);color:#fff;border-radius:10px;padding:1px 7px;font-size:0.65rem;margin-left:4px;display:none"></span>
+    </div>
+  </div>
+
+  <div class="carea">
+
+    <!-- DRE -->
+    <div id="t-dre">
+      <div id="kpi-area" class="kgrid"></div>
+      <div class="phdr">
+        <div class="ptitle">Demonstração do Resultado do Exercício<small>JR Pavimentação e Construções — Santa Fé do Sul / SP</small></div>
+        <div class="phdr-actions">
+          <button class="btn-add" onclick="openNewMonth()">+ Novo Mês</button>
+          <button class="btn-del" id="btn-del" style="display:none" onclick="delPer()">✕ Excluir coluna</button>
+          <button class="tbtn" onclick="openAddRow('dre')">+ Linha</button>
+        </div>
+      </div>
+      <div class="period-row" id="per-btns"></div>
+      <div class="hbar" id="hbar">Ocultas: <span id="hnames"></span></div>
+      <div class="fbar">
+        <input class="srch" type="text" placeholder="Filtrar indicador..." oninput="filterDRE(this.value)">
+        <button class="tbtn" id="edit-btn" onclick="toggleEdit()">✎ Editar Valores</button>
+      </div>
+      <div class="twrap"><table><thead id="dre-h"></thead><tbody id="dre-b"></tbody></table></div>
+    </div>
+
+    <!-- BALANÇO -->
+    <div id="t-bal" style="display:none">
+      <div class="phdr">
+        <div class="ptitle">Balanço Patrimonial<small>Posição mensal consolidada</small></div>
+        <div class="phdr-actions">
+          <button class="tbtn" onclick="openAddColBal()">+ Coluna</button>
+          <button class="tbtn" onclick="openAddRow('bal')">+ Linha</button>
+          <button class="tbtn" id="bal-edit-btn" onclick="toggleEditBal()">✎ Editar</button>
+        </div>
+      </div>
+      <div class="twrap"><table><thead id="bal-h"></thead><tbody id="bal-b"></tbody></table></div>
+    </div>
+
+    <!-- PLANO -->
+    <div id="t-plano" style="display:none">
+      <div class="phdr">
+        <div class="ptitle">Plano de Ação MASP<small>Método de Análise e Solução de Problemas</small></div>
+        <div class="phdr-actions">
+          <button class="tbtn" onclick="openAddRow('plano')">+ Ação</button>
+          <button class="tbtn" id="plano-edit-btn" onclick="toggleEditPlano()">✎ Editar</button>
+        </div>
+      </div>
+      <div class="fbar">
+        <input class="srch" type="text" placeholder="Buscar ação ou responsável..." oninput="filterPlano(this.value)" id="plano-q">
+        <select class="sel" id="plano-f" onchange="filterPlano(document.getElementById('plano-q').value)">
+          <option value="">Todos os status</option>
+          <option>Realizada</option><option>Em andamento</option>
+          <option>Atrasada</option><option>Cancelada</option>
+          <option>Falta data</option><option>Não iniciada</option>
+        </select>
+      </div>
+      <div class="twrap"><table><thead id="plano-h"></thead><tbody id="plano-b"></tbody></table></div>
+    </div>
+
+    <!-- HISTÓRICO -->
+    <div id="t-hist" style="display:none">
+      <div class="phdr">
+        <div class="ptitle">Histórico de Alterações<small>Registro completo de edições e acessos</small></div>
+        <div class="phdr-actions"><button class="tbtn" onclick="clearHist()">Limpar</button></div>
+      </div>
+      <div id="hlist" class="hlist"></div>
+    </div>
+
+    <!-- CADASTROS PENDENTES (admin only) -->
+    <div id="t-pending" style="display:none">
+      <div class="phdr">
+        <div class="ptitle">Cadastros Pendentes<small>Solicitações aguardando liberação de acesso</small></div>
+      </div>
+      <div id="pending-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: NOVO MÊS -->
+<div id="m-month" style="display:none">
+  <div class="moverlay" onclick="if(event.target===this)cM('m-month')">
+    <div class="modal">
+      <div class="mtitle">+ Novo <em>Mês Real</em></div>
+      <div class="mfg"><label>Identificação do mês (ex: Mar/26)</label><input type="text" id="nm-mes" placeholder="Mar/26"></div>
+      <div class="mfg"><label>Copiar valores de (opcional)</label>
+        <select id="nm-copy"><option value="">— Coluna em branco —</option></select>
+      </div>
+      <p class="mhint">Será criada <strong>1 coluna Real</strong> para o mês informado. Ao preencher os valores, a coluna <strong>Acum 2026 Real</strong> é recalculada automaticamente. Linhas de % usam fórmula automática.</p>
+      <div class="mfooter">
+        <button class="bghost" onclick="cM('m-month')">Cancelar</button>
+        <button class="bprim" onclick="confirmNewMonth()">Criar Coluna</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: NOVA AÇÃO — PLANO DE AÇÃO -->
+<div id="m-plano-row" style="display:none">
+  <div class="moverlay" onclick="if(event.target===this)cM('m-plano-row')">
+    <div class="modal" style="min-width:500px">
+      <div class="mtitle">+ Nova <em>Ação / Etapa</em></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px">
+        <div class="mfg" style="grid-column:1/-1">
+          <label>Ação / Etapa (O que / Como)</label>
+          <textarea id="pa-acao" rows="3" placeholder="Descreva a ação ou etapa a ser executada..." style="resize:vertical"></textarea>
+        </div>
+        <div class="mfg">
+          <label>Responsável (Quem)</label>
+          <input type="text" id="pa-resp" placeholder="Ex: João Victor">
+        </div>
+        <div class="mfg">
+          <label>Status / Farol</label>
+          <select id="pa-status">
+            <option value="Não iniciada">⏳ Não iniciada</option>
+            <option value="Em andamento">🔄 Em andamento</option>
+            <option value="Realizada">✅ Realizada</option>
+            <option value="Atrasada">⚠️ Atrasada</option>
+            <option value="Cancelada">❌ Cancelada</option>
+            <option value="Falta data">📅 Falta data</option>
+          </select>
+        </div>
+        <div class="mfg">
+          <label>Início</label>
+          <input type="date" id="pa-inicio">
+        </div>
+        <div class="mfg">
+          <label>Término</label>
+          <input type="date" id="pa-termino">
+        </div>
+        <div class="mfg" style="grid-column:1/-1">
+          <label>Observação da Etapa</label>
+          <input type="text" id="pa-obs" placeholder="Observações adicionais (opcional)">
+        </div>
+        <div class="mfg" style="grid-column:1/-1">
+          <label>Inserir após a ação</label>
+          <select id="pa-after"></select>
+        </div>
+      </div>
+      <div class="mfooter">
+        <button class="bghost" onclick="cM('m-plano-row')">Cancelar</button>
+        <button class="bprim" onclick="confirmNewPlanoRow()">Adicionar Ação</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: NOVA LINHA -->
+<div id="m-row" style="display:none">
+  <div class="moverlay" onclick="if(event.target===this)cM('m-row')">
+    <div class="modal">
+      <div class="mtitle">+ Nova <em>Linha</em></div>
+      <div class="mfg"><label>Nome da linha</label><input type="text" id="nr-name" placeholder="Ex: Outras Receitas"></div>
+      <div class="mfg"><label>Tipo</label>
+        <select id="nr-type" onchange="onRowTypeChange()">
+          <option value="value">Valor monetário</option>
+          <option value="percent">Percentual (fórmula automática)</option>
+          <option value="total">Total / Resultado</option>
+        </select>
+      </div>
+      <div class="mfg" id="nr-ref-wrap" style="display:none">
+        <label>Calcular % sobre qual linha</label>
+        <select id="nr-ref"></select>
+      </div>
+      <div class="mfg" id="nr-base-wrap" style="display:none">
+        <label>Dividir por (base = 100%)</label>
+        <select id="nr-base"></select>
+      </div>
+      <div class="mfg"><label>Inserir após</label><select id="nr-after"></select></div>
+      <input type="hidden" id="nr-tab">
+      <div class="mfooter">
+        <button class="bghost" onclick="cM('m-row')">Cancelar</button>
+        <button class="bprim" onclick="confirmNewRow()">Adicionar Linha</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: NOVA COLUNA BALANÇO -->
+<div id="m-col" style="display:none">
+  <div class="moverlay" onclick="if(event.target===this)cM('m-col')">
+    <div class="modal">
+      <div class="mtitle">+ Nova <em>Coluna</em></div>
+      <div class="mfg"><label>Nome da coluna</label><input type="text" id="nc-name" placeholder="Ex: Mar/26"></div>
+      <div class="mfg"><label>Copiar dados de</label><select id="nc-copy"><option value="">— Em branco —</option></select></div>
+      <div class="mfooter">
+        <button class="bghost" onclick="cM('m-col')">Cancelar</button>
+        <button class="bprim" onclick="confirmAddColBal()">Criar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script>
+// ══════════════════════════════════════════════════════════════
+// USERS — persistent registry (localStorage)
+// ══════════════════════════════════════════════════════════════
+const DEFAULT_USERS={
+  admin:{pass:'admin123',role:'admin',label:'Administrador'},
+  joaovictor:{pass:'jv2026',role:'admin',label:'João Victor'},
+  carlecio:{pass:'car2026',role:'editor',label:'Carlécio'},
+  guilherme:{pass:'gui2026',role:'editor',label:'Guilherme'},
+  liliane:{pass:'lil2026',role:'viewer',label:'Liliane'}
+};
+// Merge default + any registered users saved in localStorage
+let USERS=Object.assign({},DEFAULT_USERS,JSON.parse(localStorage.getItem('jr4_users')||'{}'));
+let CU=null,editMode=false,editBal=false,editPlano=false,fontSize=14;
+
+// ── Auth helpers ──────────────────────────────────────────────
+function togglePwd(id,eye){
+  const inp=document.getElementById(id);
+  if(inp.type==='password'){inp.type='text';eye.textContent='🙈';}
+  else{inp.type='password';eye.textContent='👁';}
+}
+function showPanel(id){
+  ['panel-login','panel-register','panel-pending'].forEach(p=>{
+    document.getElementById(p).style.display=p===id?'block':'none';
+  });
+  ['lerr','rg-err','rg-ok'].forEach(i=>{
+    const el=document.getElementById(i);if(el)el.style.display='none';
+  });
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&document.getElementById('login-screen').style.display!=='none'){
+    if(document.getElementById('panel-register').style.display!=='none') doRegister();
+    else doLogin();
+  }
+});
+
+// ── PENDING users (awaiting admin approval) ──────────────────────────────
+function getPending(){return JSON.parse(localStorage.getItem('jr4_pending')||'{}');}
+function savePending(obj){localStorage.setItem('jr4_pending',JSON.stringify(obj));}
+
+function doLogin(){
+  USERS=Object.assign({},DEFAULT_USERS,JSON.parse(localStorage.getItem('jr4_users')||'{}'));
+  const u=document.getElementById('iu').value.trim().toLowerCase();
+  const p=document.getElementById('ip').value;
+  const errEl=document.getElementById('lerr');
+  // Check if user is pending approval
+  const pending=getPending();
+  if(pending[u]){
+    errEl.textContent='Seu cadastro está aguardando aprovação pelo administrador.';
+    errEl.style.display='block';return;
+  }
+  const usr=USERS[u];
+  if(!usr){errEl.textContent=`Usuário "${u}" não encontrado.`;errEl.style.display='block';return;}
+  if(usr.pass!==p){errEl.textContent='Senha incorreta.';errEl.style.display='block';return;}
+  errEl.style.display='none';
+  CU={id:u,...usr};
+  document.getElementById('curlbl').textContent=usr.label;
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  pushH({type:'login',user:usr.label,ts:ts(),icon:'🔑'});
+  init();
+}
+
+function doRegister(){
+  const nome=document.getElementById('rg-nome').value.trim();
+  const user=document.getElementById('rg-user').value.trim().toLowerCase();
+  const pass=document.getElementById('rg-pass').value;
+  const pass2=document.getElementById('rg-pass2').value;
+  const err=document.getElementById('rg-err');
+  const btn=document.getElementById('rg-submit-btn');
+  err.style.display='none';
+  if(!nome||!user||!pass){err.textContent='Preencha todos os campos.';err.style.display='block';return;}
+  if(user.length<3){err.textContent='Usuário deve ter ao menos 3 caracteres.';err.style.display='block';return;}
+  if(pass.length<6){err.textContent='Senha deve ter ao menos 6 caracteres.';err.style.display='block';return;}
+  if(pass!==pass2){err.textContent='As senhas não coincidem.';err.style.display='block';return;}
+  USERS=Object.assign({},DEFAULT_USERS,JSON.parse(localStorage.getItem('jr4_users')||'{}'));
+  if(USERS[user]){err.textContent='Este usuário já existe. Escolha outro.';err.style.display='block';return;}
+  const pending=getPending();
+  if(pending[user]){err.textContent='Já existe uma solicitação pendente para este usuário.';err.style.display='block';return;}
+
+  // Save as pending (no role yet — admin will define)
+  pending[user]={label:nome,pass,ts:new Date().toLocaleString('pt-BR'),status:'pending'};
+  savePending(pending);
+
+  // Send e-mail via EmailJS
+  btn.disabled=true;btn.textContent='Enviando...';
+  const params={
+    to_email:'financeiro@jrsantafe.com.br',
+    nome_solicitante:nome,
+    usuario:user,
+    data_hora:new Date().toLocaleString('pt-BR'),
+    reply_to:'financeiro@jrsantafe.com.br',
+  };
+  const sendEmail=()=>new Promise((res,rej)=>{
+    if(typeof emailjs==='undefined'){rej(new Error('EmailJS não carregado'));return;}
+    emailjs.send(EMAILJS_SERVICE,EMAILJS_TEMPLATE,params).then(res).catch(rej);
+  });
+
+  sendEmail()
+    .then(()=>{
+      btn.disabled=false;btn.textContent='Solicitar Acesso';
+      showPanel('panel-pending');
+    })
+    .catch(()=>{
+      // E-mail failed but request is saved — show pending screen anyway
+      btn.disabled=false;btn.textContent='Solicitar Acesso';
+      showPanel('panel-pending');
+      console.warn('EmailJS: não foi possível enviar o e-mail. Verifique as configurações do EmailJS.');
+    });
+}
+
+function doLogout(){
+  pushH({type:'logout',user:CU.label,ts:ts(),icon:'👋'});
+  CU=null;editMode=editBal=editPlano=false;
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app').style.display='none';
+  document.getElementById('ip').value='';
+  showPanel('panel-login');
+}
+function adjFont(d){fontSize=Math.max(11,Math.min(22,fontSize+d));document.documentElement.style.setProperty('--fs',fontSize+'px');}
+
+// ── PENDING APPROVALS PANEL ───────────────────────────────────────────────
+function renderPendingTab(){
+  const pending=getPending();
+  const keys=Object.keys(pending);
+  const list=document.getElementById('pending-list');
+  if(!keys.length){
+    list.innerHTML='<div class="pempty"><strong>✔ Nenhuma solicitação pendente</strong>Todas as solicitações de acesso foram processadas.</div>';
+    return;
+  }
+  list.innerHTML=keys.map(u=>{
+    const p=pending[u];
+    return`<div class="pcard" id="pc-${u}">
+      <div class="pcard-info">
+        <div class="pcard-name">${p.label}</div>
+        <div class="pcard-meta">
+          Usuário: <span>${u}</span> &nbsp;|&nbsp; Solicitado em: <span>${p.ts}</span>
+        </div>
+      </div>
+      <div class="pcard-actions">
+        <select id="role-${u}">
+          <option value="viewer">Visualizador — somente leitura</option>
+          <option value="editor">Editor — pode editar dados</option>
+          <option value="admin">Administrador — acesso total</option>
+        </select>
+        <button class="btn-approve" onclick="approveUser('${u}')">✔ Aprovar</button>
+        <button class="btn-reject"  onclick="rejectUser('${u}')">✕ Rejeitar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function approveUser(u){
+  const pending=getPending();
+  const p=pending[u];
+  if(!p)return;
+  const role=document.getElementById(`role-${u}`).value;
+  const roleLabel={viewer:'Visualizador',editor:'Editor',admin:'Administrador'};
+  // Move to active users
+  const saved=JSON.parse(localStorage.getItem('jr4_users')||'{}');
+  saved[u]={pass:p.pass,role,label:p.label};
+  localStorage.setItem('jr4_users',JSON.stringify(saved));
+  USERS=Object.assign({},DEFAULT_USERS,saved);
+  // Remove from pending
+  delete pending[u];savePending(pending);
+  pushH({type:'approve',user:CU.label,ts:ts(),icon:'✅',target:p.label,role:roleLabel[role]});
+  updatePendingBadge();
+  renderPendingTab();
+  toast(`✔ ${p.label} aprovado como ${roleLabel[role]}!`);
+}
+
+function rejectUser(u){
+  const pending=getPending();
+  const p=pending[u];
+  if(!p)return;
+  if(!confirm(`Rejeitar o cadastro de "${p.label}" (@${u})?\n\nO usuário não poderá acessar o sistema.`))return;
+  delete pending[u];savePending(pending);
+  pushH({type:'reject',user:CU.label,ts:ts(),icon:'❌',target:p.label});
+  updatePendingBadge();
+  renderPendingTab();
+  toast(`Cadastro de ${p.label} rejeitado.`,'error');
+}
+
+function updatePendingBadge(){
+  const count=Object.keys(getPending()).length;
+  const badge=document.getElementById('pending-badge');
+  const tab=document.getElementById('tab-pending');
+  if(!badge||!tab)return;
+  if(count>0){badge.textContent=count;badge.style.display='inline';}
+  else{badge.style.display='none';}
+}
+
+// ══════════════════════════════════════════════════════════════
+// FORMAT — exact PT-BR as in spreadsheet
+// ══════════════════════════════════════════════════════════════
+const fmtV=v=>{
+  if(v===null||v===undefined||v===''||isNaN(+v))return'—';
+  const n=+v;
+  if(n===0)return'-';
+  const s=Math.abs(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  return n<0?`(${s})`:s;
+};
+const fmtP=v=>{
+  if(v===null||v===undefined||v===''||isNaN(+v))return'—';
+  const n=+v;if(n===0)return'-';
+  return(n*100).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+};
+const vc=v=>+v>0?'vpos':+v<0?'vneg':'';
+const ts=()=>new Date().toLocaleString('pt-BR');
+
+// ══════════════════════════════════════════════════════════════
+// DRE ROWS — exact labels from spreadsheet (col 0, rows 2-54)
+// rows 36 and 38 are blank separators → type:'blank'
+// ══════════════════════════════════════════════════════════════
+let DROWS=[
+  {id:'fat',   label:'Faturamento Total (Medição)',               type:'total'},
+  {id:'imp',   label:'Impostos',                                  type:'value'},
+  {id:'imp_p', label:'% Impostos',                               type:'percent',ref:'imp',base:'fat'},
+  {id:'dev',   label:'Devoluções/Acordos',                        type:'value'},
+  {id:'dev_p', label:'% Devoluções/Vale Compra',                 type:'percent',ref:'dev',base:'fat'},
+  {id:'finv',  label:'Financeiro Vendas',                         type:'value'},
+  {id:'finv_p',label:'% custo financeiro',                       type:'percent',ref:'finv',base:'fat'},
+  {id:'rl',    label:'Receita Líquida',                           type:'total'},
+  {id:'rl_p',  label:'% Faturamento',                            type:'percent',ref:'rl',base:'fat'},
+  {id:'csv',   label:'CSV (Apropriado)',                          type:'value'},
+  {id:'csv_p', label:'% CSV',                                    type:'percent',ref:'csv',base:'fat'},
+  {id:'uf',    label:'Saldo Usina/Frota',                        type:'value'},
+  {id:'uf_p',  label:'% CSV',                                    type:'percent',ref:'uf',base:'fat'},
+  {id:'csvuf_p',label:'% CSV Real Apropriado + Usina/Frota',     type:'percent',ref:null,base:null,special:'csvuf'},
+  {id:'mc',    label:'Margem de Contribuição',                    type:'total'},
+  {id:'mc_p',  label:'% MC',                                     type:'percent',ref:'mc',base:'fat'},
+  {id:'pes',   label:'Pessoal',                                   type:'value'},
+  {id:'pes_p', label:'% Faturamento',                            type:'percent',ref:'pes',base:'fat'},
+  {id:'adm',   label:'Despesas Administrativas',                  type:'value'},
+  {id:'adm_p', label:'% Faturamento',                            type:'percent',ref:'adm',base:'fat'},
+  {id:'dep',   label:'Depreciação e Amort',                       type:'value'},
+  {id:'ebt',   label:'Resultado EBITDA',                          type:'total'},
+  {id:'ebt_p', label:'% Faturamento',                            type:'percent',ref:'ebt',base:'fat'},
+  {id:'rfin',  label:'Resultado Financeiro',                      type:'value'},
+  {id:'csir',  label:'CSLL + IR',                                 type:'value'},
+  {id:'rliq',  label:'Resultado Líquido',                         type:'total'},
+  {id:'rliq_p',label:'% Faturamento',                            type:'percent',ref:'rliq',base:'fat'},
+  {id:'amort', label:'Amortização de dívida',                     type:'value'},
+  {id:'mutuo', label:'Contrato de Mútuo coligadas',               type:'value'},
+  {id:'fc',    label:'Saldo para o Fluxo de Caixa',               type:'total'},
+  {id:'_b1',   label:'',                                          type:'blank'},
+  {id:'bkop',  label:'Breakeven Operacional',                     type:'value'},
+  {id:'_b2',   label:'',                                          type:'blank'},
+  {id:'estq',  label:'Estoques',                                  type:'value'},
+  {id:'crec',  label:'Contas a Receber',                          type:'value'},
+  {id:'cpag',  label:'Contas a Pagar',                            type:'value'},
+  {id:'ncg',   label:'NCG',                                       type:'value'},
+  {id:'ncg_ant',label:'NCG mês anterior',                        type:'value'},
+  {id:'caixa', label:'Caixa',                                     type:'value'},
+  {id:'banco', label:'Bancos',                                    type:'value'},
+  {id:'fcop',  label:'Fluxo de Caixa Operacional',                type:'value'},
+  {id:'div12', label:'Dívidas 12 meses',                          type:'value'},
+  {id:'div12p',label:'Dívidas >12 meses',                         type:'value'},
+  {id:'endliq',label:'Endividamento Líquido',                     type:'value'},
+  {id:'oban',  label:'Obrigação anual da dívida',                 type:'value'},
+  {id:'atfx',  label:'Ativo Fixo Investimento',                   type:'value'},
+  {id:'roi',   label:'ROI - Retorno sob investimento',             type:'value'},
+  {id:'bkneg', label:'Breakeven negócio',                         type:'value'},
+];
+
+// ══════════════════════════════════════════════════════════════
+// PERIOD DATA — values as plain numbers (PT-BR planilha)
+// ══════════════════════════════════════════════════════════════
+const PD_DEF={
+  // ── Col 1: Plano 2022 ─────────────────────────────────────────────────
+  'Plano 2022':{_t:'plan',
+    fat:33384716.40,imp:2670777.31,imp_p:0.08,dev:333847.16,dev_p:0.01,finv:0,finv_p:0,
+    rl:30380091.93,rl_p:0.91,csv:24707592.48,csv_p:0.74,uf:667694.33,uf_p:0.02,csvuf_p:0.76,
+    mc:6340193.78,mc_p:0.19,pes:2352000,pes_p:0.0705,adm:1128600,adm_p:0.0338,dep:0,
+    ebt:2859593.78,ebt_p:0.0857,rfin:394280.29,csir:349023.86,rliq:2116289.63,rliq_p:0.0634,
+    amort:3298691.9,mutuo:3920325.82,fc:-1182402.27,bkop:18327333.20,
+    estq:0,crec:1555347.49,cpag:3458276.21,ncg:-1902928.72,ncg_ant:0,
+    caixa:585.39,banco:-189540.53,fcop:-2091883.86,div12:2804378.56,div12p:9670302.43,
+    endliq:4.43,oban:0.98,atfx:16025825.10,roi:0.132,bkneg:37772926.42},
+  // ── Col 2: Ano 2022 ───────────────────────────────────────────────────
+  'Ano 2022':{_t:'real',
+    fat:47496841.52,imp:2557887.12,imp_p:0.0539,dev:45913,dev_p:0.000967,finv:119519.33,finv_p:0.002516,
+    rl:44773522.07,rl_p:0.9427,csv:33989924.22,csv_p:0.7156,uf:483820.46,uf_p:0.0102,csvuf_p:0.7054,
+    mc:11267418.31,mc_p:0.2372,pes:3532230.74,pes_p:0.0744,adm:2884343.59,adm_p:0.0607,dep:0,
+    ebt:4850843.98,ebt_p:0.1021,rfin:725248.61,csir:0,rliq:4125595.37,rliq_p:0.0869,
+    amort:8430939.94,mutuo:-43000,fc:-4305344.57,bkop:27048522.17,
+    estq:0,crec:7424269.05,cpag:6341329.87,ncg:1082939.18,ncg_ant:0,
+    caixa:1247.32,banco:113421.54,fcop:1197608.04,div12:4398553.47,div12p:11851950.04,
+    endliq:23.45,oban:6.35,atfx:17067339.38,roi:0.2417,bkneg:65645654.59},
+  // ── Col 15: Ano 2023 — PE Plano ──────────────────────────────────────
+  'Ano 2023 PE Plano':{_t:'plan',
+    fat:60000000,imp:3600000,imp_p:0.06,dev:57999.23,dev_p:0.000967,finv:150981.82,finv_p:0.002516,
+    rl:56191018.95,rl_p:0.9365,csv:41737496.22,csv_p:0.6956,uf:1200000,uf_p:0.02,csvuf_p:0.7156,
+    mc:15653522.73,mc_p:0.2609,pes:4462061.85,pes_p:0.0743,adm:3643623.66,adm_p:0.0607,dep:0,
+    ebt:7547837.23,ebt_p:0.1258,rfin:900000,csir:0,rliq:6647837.23,rliq_p:0.1108,
+    amort:2400000,mutuo:0,fc:4247837.23,bkop:0,
+    estq:0,crec:0,cpag:0,ncg:0,ncg_ant:0,caixa:0,banco:0,fcop:0,div12:0,div12p:0,
+    endliq:0,oban:0,atfx:0,roi:0,bkneg:0},
+  // ── Col 17: Ano 2023 — Real ───────────────────────────────────────────
+  'Ano 2023 Real':{_t:'real',
+    fat:69397263.37,imp:4860013.19,imp_p:0.0700,dev:27410.03,dev_p:0.000395,finv:0,finv_p:0,
+    rl:64509840.15,rl_p:0.9296,csv:47433998.12,csv_p:0.6837,uf:-974209.45,uf_p:-0.014,csvuf_p:0.6697,
+    mc:16101632.58,mc_p:0.2320,pes:3260880.37,pes_p:0.047,adm:2788159.28,adm_p:0.0402,dep:0,
+    ebt:10052592.93,ebt_p:0.1448,rfin:1077182.61,csir:0,rliq:8975410.32,rliq_p:0.1293,
+    amort:3126807.65,mutuo:0,fc:5848602.67,bkop:26071070.47,
+    estq:0,crec:7895403.47,cpag:5698051.97,ncg:2197351.5,ncg_ant:0,
+    caixa:2251.05,banco:-254807.71,fcop:1944794.84,div12:5452205.94,div12p:12642651.5,
+    endliq:1.80,oban:0.362,atfx:17067339.38,roi:0.5259,bkneg:44190066.66},
+  // ── Col 42: Ano 2024 ─────────────────────────────────────────────────
+  'Ano 2024':{_t:'real',
+    fat:76523586.40,imp:5749220.74,imp_p:0.0751,dev:0,dev_p:0,finv:219234.05,finv_p:0.00286,
+    rl:70555131.61,rl_p:0.922,csv:54864403.12,csv_p:0.7169,uf:1375283.67,uf_p:0.01797,csvuf_p:0.7349,
+    mc:17066012.16,mc_p:0.2230,pes:2803125.58,pes_p:0.0366,adm:3654773.07,adm_p:0.0478,dep:0,
+    ebt:10608113.51,ebt_p:0.1386,rfin:1241100.16,csir:0,rliq:9367013.35,rliq_p:0.1224,
+    amort:1960496.56,mutuo:0,fc:7406516.79,bkop:28957061.60,
+    estq:0,crec:9082609.76,cpag:6826576.36,ncg:2256033.4,ncg_ant:0,
+    caixa:38719.72,banco:-274832.14,fcop:2019920.98,div12:4973576.82,div12p:17238363.83,
+    endliq:2.09,oban:0.469,atfx:22774276.39,roi:0.4113,bkneg:43312943.97},
+  // ── Col 53: Ano 2025 — PE Plano ──────────────────────────────────────
+  'Ano 2025 PE Plano':{_t:'plan',
+    fat:60000000,imp:3600000,imp_p:0.06,dev:57999.23,dev_p:0.000967,finv:150981.82,finv_p:0.002516,
+    rl:56191018.95,rl_p:0.9365,csv:40537496.22,csv_p:0.6756,uf:-3516105.19,uf_p:-0.0586,csvuf_p:0.617,
+    mc:12137417.54,mc_p:0.2023,pes:4440000,pes_p:0.074,adm:3660000,adm_p:0.061,dep:0,
+    ebt:4037417.54,ebt_p:0.0673,rfin:900000,csir:0,rliq:3137417.54,rliq_p:0.0523,
+    amort:0,mutuo:0,fc:0,bkop:0,
+    estq:0,crec:0,cpag:0,ncg:0,ncg_ant:0,caixa:0,banco:0,fcop:0,div12:0,div12p:0,
+    endliq:0,oban:0,atfx:0,roi:0,bkneg:0},
+  // ── Col 54: Ano 2025 — Real ───────────────────────────────────────────
+  'Ano 2025 Real':{_t:'real',
+    fat:58665836.70,imp:6135883.5,imp_p:0.1046,dev:0,dev_p:0,finv:556957.98,finv_p:0.00949,
+    rl:51972995.22,rl_p:0.8859,csv:45579610.66,csv_p:0.7776,uf:2458282.5,uf_p:0.0419,csvuf_p:0.8195,
+    mc:8851667.06,mc_p:0.1509,pes:2811871.6,pes_p:0.048,adm:2396215.73,adm_p:0.0409,dep:0,
+    ebt:3643579.73,ebt_p:0.0621,rfin:1940377.05,csir:0,rliq:1703202.68,rliq_p:0.029,
+    amort:5566133.39,mutuo:0,fc:-3862930.71,bkop:34517430.32,
+    estq:0,crec:9602600.24,cpag:10417866.62,ncg:-815266.38,ncg_ant:0,
+    caixa:745.87,banco:5750.19,fcop:-3042976.81,div12:7465693.34,div12p:21233167.06,
+    endliq:3.94,oban:3.07,atfx:50702667.77,roi:0.0168,bkneg:84268026.76},
+  // ── Col 72: PLANO 2026 ────────────────────────────────────────────────
+  'PLANO 2026':{_t:'plan',
+    fat:52386809.09,imp:5238680.91,imp_p:0.10,dev:0,dev_p:0,finv:576254.9,finv_p:0.011,
+    rl:46571873.28,rl_p:0.889,csv:39813974.91,csv_p:0.76,uf:1047736.18,uf_p:0.02,csvuf_p:0.78,
+    mc:7805634.55,mc_p:0.149,pes:2530684.44,pes_p:0.0483,adm:2156594.16,adm_p:0.0412,dep:0,
+    ebt:3118355.95,ebt_p:0.0596,rfin:1940377.05,csir:0,rliq:1177978.9,rliq_p:0.0225,
+    amort:5566133.39,mutuo:0,fc:-4388154.49,bkop:31458245.64,
+    estq:0,crec:0,cpag:0,ncg:0,ncg_ant:0,caixa:0,banco:0,fcop:0,div12:0,div12p:0,
+    endliq:0,oban:0,atfx:0,roi:0,bkneg:81837510.33},
+  // ── Col 73: Nova Meta G4 ─────────────────────────────────────────────
+  'Nova Meta G4':{_t:'meta',
+    fat:55502111.04,imp:5550211.1,imp_p:0.10,dev:0,dev_p:0,finv:610523.22,finv_p:0.011,
+    rl:49341376.71,rl_p:0.889,csv:39406498.84,csv_p:0.71,uf:1110042.22,uf_p:0.02,csvuf_p:0.73,
+    mc:11044920.10,mc_p:0.199,pes:2109200,pes_p:0.038,adm:2185048,adm_p:0.0394,dep:0,
+    ebt:6750672.10,ebt_p:0.1217,rfin:2977000,csir:0,rliq:3773672.10,rliq_p:0.068,
+    amort:3763000,mutuo:0,fc:10672.1,bkop:0,
+    estq:0,crec:0,cpag:0,ncg:0,ncg_ant:0,caixa:0,banco:0,fcop:0,div12:0,div12p:0,
+    endliq:0,oban:0,atfx:0,roi:0,bkneg:0},
+  // ── Col 74: Acum Plano 2026 ───────────────────────────────────────────
+  'Acum Plano 2026':{_t:'acum-plan',_acum:'plan',
+    fat:9250351.84,imp:925035.18,imp_p:0.10,dev:0,dev_p:0,finv:101753.87,finv_p:0.011,
+    rl:8223562.79,rl_p:0.889,csv:6567749.81,csv_p:0.71,uf:185007.04,uf_p:0.02,csvuf_p:0.73,
+    mc:1840820.02,mc_p:0.199,pes:351533.33,pes_p:0.038,adm:364174.67,adm_p:0.0394,dep:0,
+    ebt:1125112.02,ebt_p:0.1217,rfin:496166.67,csir:0,rliq:628945.35,rliq_p:0.068,
+    amort:1176849.96,mutuo:0,fc:1778.68,bkop:0,
+    estq:0,crec:0,cpag:0,ncg:0,ncg_ant:0,caixa:0,banco:0,fcop:0,div12:0,div12p:0,
+    endliq:0,oban:0,atfx:0,roi:0,bkneg:0},
+  // ── Col 75: Nova Meta Mês ─────────────────────────────────────────────
+  'Nova Meta Mês':{_t:'meta',
+    fat:4625175.92,imp:462517.59,imp_p:0.10,dev:0,dev_p:0,finv:50876.94,finv_p:0.011,
+    rl:4111781.39,rl_p:0.889,csv:3283874.90,csv_p:0.71,uf:92503.52,uf_p:0.02,csvuf_p:0.73,
+    mc:920410.01,mc_p:0.199,pes:175766.67,pes_p:0.038,adm:182087.33,adm_p:0.0394,dep:0,
+    ebt:562556.01,ebt_p:0.1217,rfin:248083.33,csir:0,rliq:314472.67,rliq_p:0.068,
+    amort:313583.33,mutuo:0,fc:0,bkop:0,
+    estq:0,crec:0,cpag:0,ncg:0,ncg_ant:0,caixa:0,banco:0,fcop:0,div12:0,div12p:0,
+    endliq:0,oban:0,atfx:0,roi:0,bkneg:0},
+  // ── Col 76: Acum 2026 Real ────────────────────────────────────────────
+  'Acum 2026 Real':{_t:'acum-real',_acum:'real',
+    fat:6614276.52,imp:683182.56,imp_p:0.1033,dev:0,dev_p:0,finv:0,finv_p:0,
+    rl:5931093.96,rl_p:0.8967,csv:5340744.68,csv_p:0.8074,uf:20599.02,uf_p:0.00311,csvuf_p:0.8105,
+    mc:610948.3,mc_p:0.0923,pes:339267.11,pes_p:0.0513,adm:506703.72,adm_p:0.0766,dep:0,
+    ebt:-235022.53,ebt_p:-0.0355,rfin:319874.15,csir:0,rliq:-554896.68,rliq_p:-0.0839,
+    amort:1176849.96,mutuo:0,fc:-1731746.64,bkop:9158688.22,
+    estq:0,crec:0,cpag:0,ncg:0,ncg_ant:0,caixa:0,banco:0,fcop:0,div12:0,div12p:0,
+    endliq:0,oban:0,atfx:0,roi:0,bkneg:0},
+  // ── Col 77: Jan/26 Real ───────────────────────────────────────────────
+  'Jan/26 Real':{_t:'real',_month:'Jan/26',
+    fat:4625175.92,imp:479801.83,imp_p:0.10374,dev:0,dev_p:0,finv:0,finv_p:0,
+    rl:4145374.09,rl_p:0.89626,csv:3346283.05,csv_p:0.72349,uf:139676.02,uf_p:0.030199,csvuf_p:0.69329,
+    mc:938767.06,mc_p:0.20297,pes:167799.85,pes_p:0.03628,adm:208169.53,adm_p:0.045,dep:0,
+    ebt:562797.68,ebt_p:0.12168,rfin:152473.01,csir:0,rliq:410324.67,rliq_p:0.088715,
+    amort:979925.69,mutuo:0,fc:-569601.02,bkop:1852349.32,
+    estq:0,crec:6445611.52,cpag:9173549.08,ncg:-2727937.56,ncg_ant:1,
+    caixa:1006.89,banco:-152932.67,fcop:-2879863.34,div12:8465693.34,div12p:20811221.3,
+    endliq:26.01,oban:22.563,atfx:0,roi:0,bkneg:7431521.64},
+  // ── Col 78: Fev/26 Real ───────────────────────────────────────────────
+  'Fev/26 Real':{_t:'real',_month:'Fev/26',
+    fat:1989100.6,imp:203380.73,imp_p:0.10225,dev:0,dev_p:0,finv:0,finv_p:0,
+    rl:1785719.87,rl_p:0.89775,csv:1994461.63,csv_p:1.002695,uf:-119077,uf_p:-0.05986,csvuf_p:1.062560,
+    mc:-327818.76,mc_p:-0.164808,pes:171467.26,pes_p:0.086203,adm:298534.19,adm_p:0.150085,dep:0,
+    ebt:-797820.21,ebt_p:-0.401096,rfin:167401.14,csir:0,rliq:-965221.35,rliq_p:-0.485255,
+    amort:196924.27,mutuo:0,fc:-1162145.62,bkop:-2851820.21,
+    estq:0,crec:5736823.75,cpag:10009424.34,ncg:-4272600.59,ncg_ant:1,
+    caixa:1742.9,banco:11243.46,fcop:-4259614.23,div12:9106294.18,div12p:22525960.96,
+    endliq:-19.824,oban:-17.121,atfx:0,roi:0,bkneg:-5062431.62},
+};
+
+// Persist layer
+let SE=JSON.parse(localStorage.getItem('jr4_e')||'{}');
+let SX=JSON.parse(localStorage.getItem('jr4_x')||'{}');
+let SR=JSON.parse(localStorage.getItem('jr4_r')||'[]');
+let AH=JSON.parse(localStorage.getItem('jr4_h')||'[]');
+let HC=JSON.parse(localStorage.getItem('jr4_hc')||'[]');
+const PD=Object.assign({},PD_DEF,SX);
+Object.keys(SE).forEach(p=>{if(PD[p])Object.assign(PD[p],SE[p]);});
+if(SR.length) SR.forEach(r=>DROWS.push(r));
+let activePer='Fev/26 Real';
+
+// ══ ACUM RECALC ══
+function recalcAcum(){
+  // Real monthly columns → Acum 2026 Real
+  const mr=Object.keys(PD).filter(k=>PD[k]._month&&PD[k]._t==='real');
+  const nMeses=mr.length; // how many real months exist
+
+  DROWS.forEach(r=>{
+    if(r.type==='percent'||r.type==='blank')return;
+    // Acum 2026 Real = sum of all real monthly cols
+    let sr=0;
+    mr.forEach(k=>{sr+=+PD[k][r.id]||0;});
+    if(PD['Acum 2026 Real'])PD['Acum 2026 Real'][r.id]=sr;
+
+    // Acum Plano 2026 = Nova Meta Mês × number of real months accumulated
+    if(PD['Acum Plano 2026']&&PD['Nova Meta Mês']){
+      PD['Acum Plano 2026'][r.id]=(+PD['Nova Meta Mês'][r.id]||0)*nMeses;
+    }
+  });
+  if(PD['Acum 2026 Real'])  recomputePct('Acum 2026 Real');
+  if(PD['Acum Plano 2026']) recomputePct('Acum Plano 2026');
+}
+function recomputePct(per){
+  const d=PD[per];if(!d)return;
+  DROWS.forEach(r=>{
+    if(r.type!=='percent')return;
+    if(r.special==='csvuf'){
+      const fat=+d.fat||1;
+      d[r.id]=(+d.csv+ +d.uf)/fat;
+    } else if(r.ref&&r.base){
+      const base=+d[r.base];
+      if(base)d[r.id]=+d[r.ref]/base;
+    }
+  });
+}
+
+// ══ SAVE ══
+const save=()=>{localStorage.setItem('jr4_e',JSON.stringify(SE));};
+const saveX=()=>{localStorage.setItem('jr4_x',JSON.stringify(SX));};
+const saveR=()=>{localStorage.setItem('jr4_r',JSON.stringify(SR));};
+const saveHC=()=>{localStorage.setItem('jr4_hc',JSON.stringify(HC));};
+function pushH(h){AH.unshift(h);if(AH.length>1000)AH=AH.slice(0,1000);localStorage.setItem('jr4_h',JSON.stringify(AH));}
+function toast(m,t=''){const el=document.getElementById('toast');el.textContent=m;el.className='show '+(t==='error'?'err':'');setTimeout(()=>el.className='',2800);}
+
+
+// ══ TABS ══
+function swTab(el,id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['t-dre','t-bal','t-plano','t-hist','t-pending'].forEach(i=>document.getElementById(i).style.display=i===id?'block':'none');
+  if(id==='t-hist')renderHist();
+  if(id==='t-pending')renderPendingTab();
+}
+
+// ══ INIT ══
+function init(){
+  recalcAcum();buildPerBtns();buildKPI();buildDRE();buildBal();buildPlano(PLANO);
+  // Show pending tab only for admins
+  const tab=document.getElementById('tab-pending');
+  if(tab) tab.style.display=CU?.role==='admin'?'':'none';
+  updatePendingBadge();
+}
+
+// ══ PERIOD BUTTONS ══
+const tCls={plan:'p-plan',real:'',meta:'p-meta','acum-plan':'p-acum','acum-real':'p-acum'};
+function buildPerBtns(){
+  const div=document.getElementById('per-btns');
+  div.innerHTML=Object.keys(PD).map(p=>{
+    const cls=tCls[PD[p]._t]||'';
+    const hid=HC.includes(p)?'p-hidden':'';
+    const pp=p.replace(/'/g,'&#39;');
+    return`<div class="perbtn ${cls} ${hid}${p===activePer?' active':''}" onclick="selPer(this,'${pp}')">
+      ${p}<button class="hide-x" onclick="event.stopPropagation();toggleHide('${pp}')" title="${HC.includes(p)?'Mostrar':'Ocultar'}">${HC.includes(p)?'👁':'×'}</button>
+    </div>`;
+  }).join('');
+  // hidden bar
+  const hb=document.getElementById('hbar');
+  document.getElementById('hnames').innerHTML=HC.map(c=>`<span class="unhide" onclick="toggleHide('${c.replace(/'/g,"\\'")}')">👁 ${c}</span>`).join(' ');
+  hb.style.display=HC.length?'flex':'none';
+  // fill nm-copy
+  const sel=document.getElementById('nm-copy');
+  if(sel)sel.innerHTML='<option value="">— Coluna em branco —</option>'+Object.keys(PD).map(p=>`<option value="${p}">${p}</option>`).join('');
+}
+// Columns that cannot be deleted (core planilha data)
+const PROTECTED_COLS=new Set([
+  'Plano 2022','Ano 2022','Ano 2023 PE Plano','Ano 2023 Real','Ano 2024',
+  'Ano 2025 PE Plano','Ano 2025 Real','PLANO 2026','Nova Meta G4',
+  'Acum Plano 2026','Nova Meta Mês','Acum 2026 Real','Jan/26 Real','Fev/26 Real'
+]);
+function selPer(el,p){
+  activePer=p;
+  document.querySelectorAll('.perbtn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  // Show delete button for any column when admin/editor — protected cols get warning on click
+  const canDel=CU?.role==='admin'||CU?.role==='editor';
+  document.getElementById('btn-del').style.display=canDel?'':'none';
+  buildKPI();buildDRE();
+}
+function delPer(){
+  if(PROTECTED_COLS.has(activePer)){
+    toast(`"${activePer}" é uma coluna fixa da planilha e não pode ser excluída.`,'error');
+    return;
+  }
+  if(!confirm(`Excluir a coluna "${activePer}"?\n\nEsta ação não pode ser desfeita.`))return;
+  const n=activePer;
+  delete PD[n];
+  if(SX[n]) delete SX[n];
+  if(SE[n]) delete SE[n];
+  saveX();save();
+  recalcAcum();
+  pushH({type:'delcol',user:CU.label,ts:ts(),icon:'🗑️',col:n});
+  // Select last available column
+  activePer=Object.keys(PD).slice(-1)[0];
+  buildPerBtns();buildKPI();buildDRE();
+  toast(`Coluna "${n}" excluída.`);
+}
+function toggleHide(p){
+  const i=HC.indexOf(p);if(i>=0)HC.splice(i,1);else HC.push(p);
+  saveHC();buildPerBtns();buildDRE();
+}
+
+// ══ KPI ══
+function buildKPI(){
+  const d=PD[activePer];
+  const cards=[
+    {l:'Faturamento',v:'R$ '+(d.fat/1e6).toFixed(2)+'M',s:activePer,b:'',bc:'',ac:'k-gold'},
+    {l:'Receita Líquida',v:'R$ '+(d.rl/1e6).toFixed(2)+'M',s:fmtP(d.rl_p)+' do fat.',b:'',bc:'',ac:'k-gold'},
+    {l:'Margem Contribuição',v:fmtP(d.mc_p),s:'R$ '+(d.mc/1e3).toFixed(0)+'k',b:d.mc_p>=0.149?'▲ Meta':'▼ Abaixo',bc:d.mc_p>=0.149?'b-green':'b-red',ac:d.mc_p>=0.149?'k-green':'k-red'},
+    {l:'EBITDA',v:fmtP(d.ebt_p),s:'R$ '+(d.ebt/1e3).toFixed(0)+'k',b:d.ebt>0?'▲ Positivo':'▼ Negativo',bc:d.ebt>0?'b-green':'b-red',ac:d.ebt>0?'k-green':'k-red'},
+    {l:'% CSV Real',v:fmtP(d.csv_p),s:'Meta: 72%',b:d.csv_p<=0.72?'✔ Meta':'✘ Acima',bc:d.csv_p<=0.72?'b-green':'b-red',ac:d.csv_p<=0.72?'k-green':'k-red'},
+    {l:'% Impostos',v:fmtP(d.imp_p),s:'sobre faturamento',b:'',bc:'',ac:'k-gold'},
+  ];
+  document.getElementById('kpi-area').innerHTML=cards.map(k=>`<div class="kcard ${k.ac}"><div class="klbl">${k.l}</div><div class="kval">${k.v}</div><div class="ksub">${k.s}</div>${k.b?`<div class="kbadge ${k.bc}">${k.b}</div>`:''}</div>`).join('');
+}
+
+// ══ DRE TABLE ══
+function buildDRE(){
+  const vis=Object.keys(PD).filter(p=>!HC.includes(p));
+  const tcls={'plan':'th-plan','real':'th-real','meta':'th-meta','acum-plan':'th-acum','acum-real':'th-acum'};
+  document.getElementById('dre-h').innerHTML='<tr><th>Indicador / Linha</th>'+
+    vis.map(p=>`<th class="${tcls[PD[p]._t]||''}">${p}</th>`).join('')+'</tr>';
+  document.getElementById('dre-b').innerHTML=DROWS.map(row=>{
+    if(row.type==='blank')return`<tr class="r-blank"><td colspan="${vis.length+1}"></td></tr>`;
+    const isPct=row.type==='percent';
+    const cls=row.type==='total'?'r-total':isPct?'r-pct':'';
+    const cells=vis.map(p=>{
+      const d=PD[p];const v=d[row.id];
+      const disp=isPct?fmtP(v):fmtV(v);
+      const c=(!isPct&&v!=null&&!isNaN(+v))?vc(v):'';
+      const isAcum=d._t==='acum-plan'||d._t==='acum-real';
+      const fmark=isPct&&isAcum?'<sup style="color:var(--jr-gold2);font-size:0.6rem;margin-left:1px">ƒ</sup>':'';
+      // Editable: click directly on cell — no pencil needed
+      if(!isPct&&editMode&&CU?.role!=='viewer'){
+        const pp=p.replace(/'/g,"\\'").replace(/\//g,'\\/');
+        return`<td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,'${pp}','${row.id}')"><span class="${c}">${disp}</span></td>`;
+      }
+      return`<td class="${c}">${disp}${fmark}</td>`;
+    }).join('');
+    return`<tr class="${cls}" data-lbl="${row.label.toLowerCase()}"><td>${row.label}</td>${cells}</tr>`;
+  }).join('');
+}
+function filterDRE(q){document.querySelectorAll('#dre-b tr').forEach(r=>{r.style.display=(r.dataset.lbl||'').includes(q.toLowerCase())?'':'none';});}
+function toggleEdit(){
+  if(CU?.role==='viewer'){toast('Sem permissão de edição','error');return;}
+  editMode=!editMode;
+  const b=document.getElementById('edit-btn');
+  b.textContent=editMode?'🔒 Sair da Edição':'✎ Editar Valores';
+  b.classList.toggle('active',editMode);
+  buildDRE();
+  toast(editMode?'Edição ativada — clique em qualquer célula para editar':'Edição desativada');
+}
+function inlineEditDRE(td,per,rowId){
+  if(td.querySelector('input'))return; // already editing
+  const v=+PD[per][rowId]||0;
+  const disp=v.toFixed(2);
+  td.innerHTML=`<input class="ci" type="number" value="${disp}" step="0.01"
+    onkeydown="confEdit(event,'${per}','${rowId}',this)"
+    onblur="confEditBlur('${per}','${rowId}',this)">`;
+  const inp=td.querySelector('input');inp.focus();inp.select();
+}
+function confEdit(e,per,rowId,inp){
+  if(e.key==='Escape'){buildDRE();return;}
+  if(e.key==='Tab'){e.preventDefault();saveEditDRE(per,rowId,inp);focusNextCell(inp);return;}
+  if(e.key!=='Enter')return;
+  e.preventDefault();saveEditDRE(per,rowId,inp);
+}
+function confEditBlur(per,rowId,inp){
+  // small delay so Tab can intercept first
+  setTimeout(()=>{if(document.activeElement!==inp)saveEditDRE(per,rowId,inp);},120);
+}
+function saveEditDRE(per,rowId,inp){
+  const nv=parseFloat(inp.value);
+  if(isNaN(nv)){buildDRE();return;}
+  const old=PD[per][rowId];
+  if(nv===old){buildDRE();return;}
+  PD[per][rowId]=nv;
+  if(!SE[per])SE[per]={};SE[per][rowId]=nv;save();
+  recomputePct(per);
+  if(PD[per]._month)recalcAcum();
+  const lbl=DROWS.find(r=>r.id===rowId)?.label||rowId;
+  pushH({type:'edit',user:CU.label,ts:ts(),icon:'✏️',period:per,lbl,oldV:fmtV(old),newV:fmtV(nv)});
+  buildKPI();buildDRE();toast(`${lbl} atualizado!`);
+}
+function focusNextCell(inp){
+  const td=inp.closest('td');
+  const tr=td.closest('tr');
+  const tds=[...tr.querySelectorAll('td.td-edit')];
+  const idx=tds.indexOf(td);
+  if(idx>=0&&idx<tds.length-1)tds[idx+1].click();
+  else buildDRE();
+}
+
+// ══ ADD MONTH ══
+function openNewMonth(){
+  if(CU?.role==='viewer'){toast('Sem permissão','error');return;}
+  document.getElementById('nm-mes').value='';
+  buildPerBtns();
+  document.getElementById('m-month').style.display='flex';
+}
+function confirmNewMonth(){
+  const mes=document.getElementById('nm-mes').value.trim();
+  if(!mes){toast('Informe o mês','error');return;}
+  const rk=mes+' Real';
+  if(PD[rk]){toast(`Já existe coluna "${rk}"','error`);return;}
+  const cf=document.getElementById('nm-copy').value;
+  const tpl=cf&&PD[cf]?JSON.parse(JSON.stringify(PD[cf])):null;
+  const b={};
+  DROWS.forEach(r=>{if(r.type!=='blank')b[r.id]=tpl?+tpl[r.id]||0:0;});
+  b._t='real'; b._month=mes;
+  PD[rk]=b;
+  SX[rk]=JSON.parse(JSON.stringify(b));
+  saveX(); recalcAcum();
+  pushH({type:'newcol',user:CU.label,ts:ts(),icon:'➕',col:rk,from:cf||'em branco'});
+  activePer=rk; cM('m-month'); buildPerBtns(); buildKPI(); buildDRE();
+  toast(`Coluna "${rk}" criada — Acum 2026 Real atualizado.`);
+}
+function toggleHide(p){
+  const i=HC.indexOf(p);if(i>=0)HC.splice(i,1);else HC.push(p);
+  saveHC();buildPerBtns();buildDRE();
+}
+
+// ══ ADD ROW ══
+function onRowTypeChange(){
+  const t=document.getElementById('nr-type').value;
+  document.getElementById('nr-ref-wrap').style.display=t==='percent'?'block':'none';
+  document.getElementById('nr-base-wrap').style.display=t==='percent'?'block':'none';
+}
+function openAddRow(tab){
+  if(CU?.role==='viewer'){toast('Sem permissão','error');return;}
+  // Plano uses its own dedicated modal
+  if(tab==='plano'){
+    document.getElementById('pa-acao').value='';
+    document.getElementById('pa-resp').value='';
+    document.getElementById('pa-inicio').value='';
+    document.getElementById('pa-termino').value='';
+    document.getElementById('pa-status').value='Não iniciada';
+    document.getElementById('pa-obs').value='';
+    // populate "insert after" with current PLANO rows
+    document.getElementById('pa-after').innerHTML=
+      `<option value="-1">— No início da lista —</option>`+
+      PLANO.map((r,i)=>`<option value="${i}" ${i===PLANO.length-1?'selected':''}>${r[0]}. ${String(r[1]).slice(0,55)}</option>`).join('');
+    document.getElementById('m-plano-row').style.display='flex';
+    return;
+  }
+  document.getElementById('nr-name').value='';
+  document.getElementById('nr-tab').value=tab;
+  document.getElementById('nr-type').value='value';
+  document.getElementById('nr-ref-wrap').style.display='none';
+  document.getElementById('nr-base-wrap').style.display='none';
+  const nonPct=DROWS.filter(r=>r.type!=='percent'&&r.type!=='blank');
+  document.getElementById('nr-ref').innerHTML=nonPct.map(r=>`<option value="${r.id}">${r.label}</option>`).join('');
+  document.getElementById('nr-base').innerHTML=nonPct.map(r=>`<option value="${r.id}"${r.id==='fat'?' selected':''}>${r.label}</option>`).join('');
+  if(tab==='dre'){
+    document.getElementById('nr-after').innerHTML=DROWS.filter(r=>r.type!=='blank').map(r=>`<option value="${r.id}">${r.label}</option>`).join('');
+  } else {
+    document.getElementById('nr-after').innerHTML=BAL_ROWS.filter(r=>r.t!=='h').map((r,i)=>`<option value="${i}">${r.lbl}</option>`).join('');
+  }
+  document.getElementById('m-row').style.display='flex';
+}
+
+// Renumber PLANO sequentially after any insert/delete
+function renumberPlano(){
+  PLANO.forEach((r,i)=>{ r[0]=i+1; });
+}
+
+function confirmNewPlanoRow(){
+  const acao=document.getElementById('pa-acao').value.trim();
+  if(!acao){toast('Informe a ação/etapa','error');return;}
+  const resp=document.getElementById('pa-resp').value.trim()||'—';
+  const status=document.getElementById('pa-status').value;
+  const obs=document.getElementById('pa-obs').value.trim();
+  // Format dates dd/mm/yyyy or —
+  const fmtDate=id=>{
+    const v=document.getElementById(id).value;
+    if(!v)return'—';
+    const[y,m,d]=v.split('-');return`${d}/${m}/${y}`;
+  };
+  const inicio=fmtDate('pa-inicio');
+  const termino=fmtDate('pa-termino');
+  const aft=parseInt(document.getElementById('pa-after').value);
+  const insertAt=aft<0?0:aft+1;
+  // Insert with placeholder number 0 — renumber will fix it
+  PLANO.splice(insertAt,0,[0,acao,resp,inicio,termino,status,obs]);
+  renumberPlano();
+  pushH({type:'newrow',user:CU.label,ts:ts(),icon:'➕',row:acao.slice(0,60),tab:'plano'});
+  cM('m-plano-row');
+  buildPlano(PLANO);
+  toast(`Ação nº ${PLANO[insertAt][0]} adicionada!`);
+}
+
+function confirmNewRow(){
+  const name=document.getElementById('nr-name').value.trim();
+  if(!name){toast('Informe o nome','error');return;}
+  const tab=document.getElementById('nr-tab').value;
+  const type=document.getElementById('nr-type').value;
+  const ref=document.getElementById('nr-ref').value;
+  const base=document.getElementById('nr-base').value;
+  const aft=document.getElementById('nr-after').value;
+  const id='cx_'+Date.now();
+  if(tab==='dre'){
+    const row={id,label:name,type,ref:type==='percent'?ref:null,base:type==='percent'?base:null,_custom:true};
+    const ai=DROWS.findIndex(r=>r.id===aft);
+    DROWS.splice(ai+1,0,row);
+    Object.keys(PD).forEach(p=>{PD[p][id]=0;});
+    SR=DROWS.filter(r=>r._custom);saveR();
+  } else {
+    BAL_ROWS.splice(parseInt(aft)+1,0,{id:'cx_'+Date.now(),lbl:name,t:'v',v:BAL_COLS.slice(1).map(()=>'0')});
+  }
+  pushH({type:'newrow',user:CU.label,ts:ts(),icon:'➕',row:name,tab});
+  cM('m-row');
+  if(tab==='dre')buildDRE();else buildBal();
+  toast(`Linha "${name}" adicionada!`);
+}
+
+// ══ BALANÇO ══
+let BAL_COLS=["Conta","Dez/25","Jan/26","Fev/26"];
+// t:"v"=editável  t:"f"=fórmula bloqueada  t:"h"=cabeçalho  t:"blank"=linha vazia
+const BAL_ROWS=[
+  // Row 2 — ATIVO
+  {id:"h-ativo",  lbl:"ATIVO",                                      t:"h",  v:[]},
+  // Row 3 — Total do Ativo (primeiro, como na planilha)
+  {id:"totAtivo", lbl:"Total do Ativo",                             t:"f",  sums:["atCirc","rlp","atPerm"], v:[]},
+  // Row 4 — Ativo Circulante
+  {id:"atCirc",   lbl:"Ativo Circulante",                           t:"f",  sums:["caixa","bancos","cli1","cliDuv","estq","adtForn","outros1"], v:[]},
+  // Rows 5-11 — subcontas circulante
+  {id:"caixa",    lbl:"  Caixa",                                    t:"v",  v:["745,87","1.006,89","1.742,90"]},
+  {id:"bancos",   lbl:"  Bancos + aplicações",                      t:"v",  v:["5.750,19","-152.932,67","11.243,46"]},
+  {id:"cli1",     lbl:"  Clientes (a receber até 1 ano)",           t:"v",  v:["5.230.951,00","6.445.611,52","5.736.823,75"]},
+  {id:"cliDuv",   lbl:"  Clientes Duvidosos",                       t:"v",  v:["2.892.135,63","2.892.135,63","2.892.135,63"]},
+  {id:"estq",     lbl:"  Estoques",                                 t:"v",  v:["0","0","0"]},
+  {id:"adtForn",  lbl:"  Adiantamento a Fornecedores",              t:"v",  v:["0","0","0"]},
+  {id:"outros1",  lbl:"  Outros",                                   t:"v",  v:["0","0","0"]},
+  // Row 12 — Realizável a longo Prazo
+  {id:"rlp",      lbl:"Realizável a longo Prazo",                   t:"f",  sums:["cli2","outros2"], v:[]},
+  // Rows 13-14 — subcontas realizável
+  {id:"cli2",     lbl:"  Clientes (a receber > 1 ano)",             t:"v",  v:["0","0","0"]},
+  {id:"outros2",  lbl:"  Outros",                                   t:"v",  v:["0","0","0"]},
+  // Row 15 — Ativo Permanente
+  {id:"atPerm",   lbl:"Ativo Permanente",                           t:"f",  sums:["imobMaq","imobTerr","outros3"], v:[]},
+  // Rows 16-18 — subcontas permanente
+  {id:"imobMaq",  lbl:"  Imobilizado (maq e equip)",                t:"v",  v:["22.655.541,77","22.655.541,77","22.600.541,77"]},
+  {id:"imobTerr", lbl:"  Imobilizado (terrenos)",                   t:"v",  v:["28.047.126,00","28.047.126,00","28.294.235,00"]},
+  {id:"outros3",  lbl:"  Outros",                                   t:"v",  v:["0","0","0"]},
+  // Row 19 — linha vazia (separador)
+  {id:"blank1",   lbl:"",                                           t:"blank", v:[]},
+  // Row 20 — PASSIVO
+  {id:"h-pass",   lbl:"PASSIVO",                                    t:"h",  v:[]},
+  // Row 21 — Total do Passivo (primeiro, como na planilha)
+  {id:"totPass",  lbl:"Total do Passivo",                           t:"f",  sums:["circ","exig","pl"], v:[]},
+  // Row 22 — Circulante
+  {id:"circ",     lbl:"Circulante",                                 t:"f",  sums:["forn1","cliDuv2","gov","empCp","parcGov1","outros4"], v:[]},
+  // Rows 23-28 — subcontas circulante passivo
+  {id:"forn1",    lbl:"  Fornecedores (contas a pagar até 1 ano)",  t:"v",  v:["8.170.124,63","9.063.865,06","9.907.734,63"]},
+  {id:"cliDuv2",  lbl:"  Clientes Duvidosos",                       t:"v",  v:["2.892.135,63","2.892.135,63","2.892.135,63"]},
+  {id:"gov",      lbl:"  Governo",                                  t:"v",  v:["0","0","0"]},
+  {id:"empCp",    lbl:"  Empréstimos/financiamentos/consórcios",    t:"v",  v:["4.709.893,34","5.709.893,34","6.307.448,02"]},
+  {id:"parcGov1", lbl:"  Parcelamento Governo",                     t:"v",  v:["2.755.800,00","2.755.800,00","2.798.846,16"]},
+  {id:"outros4",  lbl:"  Outros",                                   t:"v",  v:["0","0","0"]},
+  // Row 29 — Exigivel a Longo Prazo
+  {id:"exig",     lbl:"Exigivel a Longo Prazo",                     t:"f",  sums:["forn2","empLp","parcGov2","terrInv","outros5"], v:[]},
+  // Rows 30-34 — subcontas exigível
+  {id:"forn2",    lbl:"  Fornecedores (contas a pagar > 1 ano)",    t:"v",  v:["110.299,24","109.684,02","101.689,71"]},
+  {id:"empLp",    lbl:"  Empréstimos/financiamentos/consórcios",    t:"v",  v:["8.909.417,06","8.717.121,30","10.721.099,09"]},
+  {id:"parcGov2", lbl:"  Parcelamento governo",                     t:"v",  v:["12.323.750,00","12.094.100,00","11.804.861,87"]},
+  {id:"terrInv",  lbl:"  Terrenos investimento",                    t:"v",  v:["0","0","0"]},
+  {id:"outros5",  lbl:"  Outros",                                   t:"v",  v:["0","0","0"]},
+  // Row 35 — Patrimônio Líquido
+  {id:"pl",       lbl:"Patrimônio Líquido",                         t:"f",  sums:["capSoc","lucros"], v:[]},
+  // Rows 36-37 — subcontas PL
+  {id:"capSoc",   lbl:"  Capital Social",                           t:"v",  v:["10.000.000,00","10.000.000,00","10.000.000,00"]},
+  {id:"lucros",   lbl:"  Lucros/Prejuizos acumulados",              t:"v",  v:["8.960.830,56","8.545.889,79","5.002.907,40"]},
+  // Row 38 — linha vazia (separador)
+  {id:"blank2",   lbl:"",                                           t:"blank", v:[]},
+  // Row 39 — Indicadores
+  {id:"h-ind",    lbl:"Indicadores Estrutura de Capital / Liquidez",t:"h",  v:[]},
+  // Rows 40-46 — indicadores calculados
+  {id:"ind1",     lbl:"Participação de Capital de terceiro (<)",    t:"f",  fn:"ind_pct",   v:[]},
+  {id:"ind2",     lbl:"Composição do Endividamento (<)",            t:"f",  fn:"ind_comp",  v:[]},
+  {id:"ind3",     lbl:"Imobilização do Patrimônio Líquido (<)",     t:"f",  fn:"ind_imob",  v:[]},
+  {id:"ind4",     lbl:"Imobilização de Recursos não correntes (<)", t:"f",  fn:"ind_imob2", v:[]},
+  {id:"ind5",     lbl:"Liquidez Geral (>)",                         t:"f",  fn:"ind_lg",    v:[]},
+  {id:"ind6",     lbl:"Liquidez Corrente (>)",                      t:"f",  fn:"ind_lc",    v:[]},
+  {id:"ind7",     lbl:"Liquidez Seca (>)",                          t:"f",  fn:"ind_ls",    v:[]},
+];
+function ensureBalCols(){const n=BAL_COLS.length-1;BAL_ROWS.forEach(r=>{while(r.v.length<n)r.v.push("0");});}
+ensureBalCols();
+const parsePT=s=>{if(!s||s==="-"||s==="—")return 0;return parseFloat(String(s).replace(/\./g,"").replace(",","."))||0;};
+const fmtBal=n=>{if(n===0)return"-";const s=Math.abs(n).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});return n<0?"("+s+")":s;};
+const fmtInd=n=>{if(isNaN(n)||!isFinite(n))return"-";return n.toLocaleString("pt-BR",{minimumFractionDigits:3,maximumFractionDigits:3});};
+function calcBal(){
+  const n=BAL_COLS.length-1;
+  const byId={};BAL_ROWS.forEach(r=>byId[r.id]=r);
+  for(let p=0;p<3;p++){
+    BAL_ROWS.forEach(r=>{
+      if(r.t!=="f"||!r.sums)return;
+      r.v=Array.from({length:n},(_,ci)=>{let s=0;r.sums.forEach(sid=>{const sr=byId[sid];if(sr)s+=parsePT(sr.v[ci]);});return fmtBal(s);});
+    });
+  }
+  BAL_ROWS.forEach(r=>{
+    if(r.t!=="f"||!r.fn)return;
+    r.v=Array.from({length:n},(_,ci)=>{
+      const g=id=>parsePT(byId[id]?.v[ci]);
+      const totP=g("totPass")||1,pl=g("pl"),circ=g("circ"),exig=g("exig");
+      const atCirc=g("atCirc"),rlp=g("rlp"),atPerm=g("atPerm");
+      let v=0;
+      if(r.fn==="ind_pct")  v=(totP-pl)/Math.abs(pl||1);
+      if(r.fn==="ind_comp") v=circ/((circ+exig)||1);
+      if(r.fn==="ind_imob") v=atPerm/Math.abs(pl||1);
+      if(r.fn==="ind_imob2")v=atPerm/((pl+exig)||1);
+      if(r.fn==="ind_lg")   v=(atCirc+rlp)/((circ+exig)||1);
+      if(r.fn==="ind_lc")   v=atCirc/(circ||1);
+      if(r.fn==="ind_ls")   v=(atCirc-g("estq"))/(circ||1);
+      return fmtInd(v);
+    });
+  });
+}
+function buildBal(){
+  calcBal();
+  const n=BAL_COLS.length-1;
+  document.getElementById("bal-h").innerHTML="<tr>"+BAL_COLS.map((c,i)=>"<th"+(i===0?" style=\"text-align:left;min-width:300px\"":"")+">"+c+"</th>").join("")+"</tr>";
+  document.getElementById("bal-b").innerHTML=BAL_ROWS.map((r,ri)=>{
+    // Blank separator row
+    if(r.t==="blank") return`<tr class="r-blank"><td colspan="${n+1}"></td></tr>`;
+    const isHdr=r.t==="h";
+    const isFml=r.t==="f";
+    // Headers and formula subtotals (non-indicator) get bold style
+    const rc=isHdr?"r-total":isFml&&!r.id.startsWith("ind")?"r-total":"";
+    const cols=Array.from({length:n},(_,ci)=>{
+      const val=r.v[ci]??"";
+      if(isHdr) return`<td style="text-align:right">${BAL_COLS[ci+1]||""}</td>`;
+      if(isFml){
+        const nm=parsePT(val);
+        return`<td style="text-align:right;${nm<0?"color:var(--neg)":""}">${val}<sup title="Calculado automaticamente" style="color:var(--jr-gold2);font-size:.55rem;margin-left:2px">ƒ</sup></td>`;
+      }
+      if(editBal&&CU?.role!=="viewer")
+        return`<td class="td-edit" style="text-align:right" title="Clique para editar" onclick="inlineEditBal(this,${ri},${ci})">${val}</td>`;
+      return`<td style="text-align:right">${val}</td>`;
+    }).join("");
+    return`<tr class="${rc}"><td>${r.lbl}</td>${cols}</tr>`;
+  }).join("");
+}
+function toggleEditBal(){
+  if(CU?.role==="viewer"){toast("Sem permissão","error");return;}
+  editBal=!editBal;
+  const b=document.getElementById("bal-edit-btn");
+  b.textContent=editBal?"🔒 Sair":"✎ Editar";
+  b.classList.toggle("active",editBal);
+  buildBal();
+  toast(editBal?"Edição ativada — clique em qualquer célula para editar":"Edição desativada");
+}
+function inlineEditBal(td,ri,ci){
+  if(td.querySelector("input"))return;
+  const r=BAL_ROWS[ri];if(!r||r.t!=="v")return;
+  const v=r.v[ci];
+  td.innerHTML="<input class=\"ci\" type=\"text\" value=\""+v+"\" style=\"width:120px;text-align:right\" onkeydown=\"confEditBal(event,"+ri+","+ci+",this)\" onblur=\"saveEditBal("+ri+","+ci+",this)\">";
+  const inp=td.querySelector("input");inp.focus();inp.select();
+}
+function confEditBal(e,ri,ci,inp){
+  if(e.key==="Escape"){buildBal();return;}
+  if(e.key==="Tab"){e.preventDefault();saveEditBal(ri,ci,inp);focusNextBal(inp);return;}
+  if(e.key==="Enter"){e.preventDefault();saveEditBal(ri,ci,inp);}
+}
+function saveEditBal(ri,ci,inp){
+  const r=BAL_ROWS[ri];if(!r||r.t!=="v")return;
+  const old=r.v[ci];const nv=inp.value.trim();
+  if(nv===old){buildBal();return;}
+  r.v[ci]=nv;
+  pushH({type:"edit",user:CU.label,ts:ts(),icon:"✏️",period:"Balanço",lbl:r.lbl,oldV:old,newV:nv});
+  buildBal();toast("Atualizado!");
+}
+function focusNextBal(inp){
+  const td=inp.closest("td");const tr=td.closest("tr");
+  const tds=[...tr.querySelectorAll("td.td-edit")];
+  const idx=tds.indexOf(td);
+  if(idx>=0&&idx<tds.length-1)tds[idx+1].click();else buildBal();
+}
+function startEditBal(){}
+function openAddColBal(){
+  if(CU?.role==="viewer"){toast("Sem permissão","error");return;}
+  document.getElementById("nc-name").value="";
+  document.getElementById("nc-copy").innerHTML="<option value=\"\">— Em branco —</option>"+BAL_COLS.slice(1).map(c=>"<option value=\""+c+"\">"+c+"</option>").join("");
+  document.getElementById("m-col").style.display="flex";
+}
+function confirmAddColBal(){
+  const name=document.getElementById("nc-name").value.trim();
+  if(!name){toast("Informe o nome","error");return;}
+  if(BAL_COLS.includes(name)){toast("Coluna já existe","error");return;}
+  const cf=document.getElementById("nc-copy").value;
+  const cfi=cf?BAL_COLS.indexOf(cf)-1:-1;
+  BAL_COLS.push(name);
+  BAL_ROWS.forEach(r=>{r.v.push(cfi>=0&&r.v[cfi]!==undefined?r.v[cfi]:"0");});
+  pushH({type:"newcol",user:CU.label,ts:ts(),icon:"➕",col:name,from:cf||"em branco"});
+  cM("m-col");buildBal();toast("Coluna \""+name+"\" adicionada!");
+}
+
+// ══ PLANO ══
+let PLANO=[
+  [1,'Entender com comercial/engenharia se teremos obra para atingir 60M','Nilsen','02/06/2025','—','Realizada',''],
+  [2,'Plano de redução de custo CSV para atingir 72%','Carlécio','02/06/2025','31/07/2025','Realizada','Alinhar alimentação com dinâmica de vida e gosto alimentar'],
+  [3,'Atualizar indicador orçado x apropriado somente com o ano de 2025','Guilherme','02/06/2025','18/06/2025','Realizada','Buscar meios de levar alimentação em recipiente correto para manter qualidade'],
+  [4,'Definir criação dos CC definidos no zap','João Victor','02/06/2025','02/10/2025','Realizada','Incluir maiores dificuldades em cumprir a missão'],
+  [5,'Projetar previsão de faturamento (apropriação) das obras em andamento, conforme cronograma','Carlécio','02/06/2025','31/07/2025','Cancelada','Para garantir que não terá fisicamente nenhuma opção para fugir do cardápio'],
+  [6,'Reestruturar CRTI com CC para orçamento nos deptos','João Victor','02/06/2025','10/10/2025','Realizada',''],
+  [7,'Treinar requisitantes (material e serviços) e lançadores para a nova reestrutura de serviços de apropriação','João Victor','02/06/2025','13/10/2025','Realizada',''],
+  [8,'Criar orçamento para plano de contas PESSOAL e despesas ADM para dividir por centro de custos','Liliane','02/06/2025','01/01/2026','Realizada',''],
+  [9,'Garantir fechamento DRE e Balanço mensal até o 10 dia útil','João Victor','02/06/2025','24/06/2025','Realizada',''],
+  [10,'Conferir na contabilidade (Danilo) cálculo para imposto das notas fiscais','João Victor','02/06/2025','03/07/2025','Realizada',''],
+  [11,'Criar controle acumulativo de obras encerradas, assim analisando resultado real final','Carlécio','02/06/2025','21/08/2026','Realizada','Era o passado, já feito.'],
+  [12,'Criar indicador para obras finalizadas - apropriado x contrato. Apresentar MASP reunião de julho','Carlécio','02/06/2025','19/03/2026','Em andamento',''],
+  [13,'Atualizar plano de ação conforme padrão MASP','Ricardo','02/06/2025','30/10/2025','Realizada',''],
+  [14,'Criar controle medido contrato x apropriado no mês, acumulado no ano e acumulado obra (que já existe)','Guilherme','02/06/2025','18/08/2025','Realizada',''],
+  [15,'Com o item acima, os engenheiros terão que analisar a estratificação, caso o CSV esteja superior as 74%','Carlécio','02/06/2025','20/08/2025','Realizada',''],
+  [16,'Atualizar este plano de ação com o padrão de plano de ação do MASP JR','João Victor','02/06/2025','01/11/2025','Realizada',''],
+  [17,'Retomar indicador alterações pós fechamento dos lançamentos sistema','Neto','02/06/2025','20/08/2025','Realizada',''],
+  [18,'Refazer comparativo anual e acumulado até julho com o relatório analítico','Neto','02/06/2025','20/08/2025','Realizada',''],
+  [19,'Investigar obras medidas com faturamento direto em %, pois os impostos estão 11,7% acima da meta','Neto','02/06/2025','20/08/2025','Realizada',''],
+  [20,'Verificar queda do valor PESSOAL de 200k maio e junho para 145k se foi rateio','João Victor','02/06/2025','20/08/2025','Realizada',''],
+  [21,'Estratificar Amortização de dívidas para validar 557k em jul e 2,72M ano 25','João Victor','02/06/2025','20/08/2025','Realizada',''],
+  [22,'Reunião com Junior para fechar o semestre','Ricardo','02/06/2025','09/10/2025','Realizada',''],
+  [23,'Alinhar com Pedro Lucas sobre lançamento de rateio de equipamento','Cesar','02/06/2025','03/10/2025','Realizada',''],
+  [24,'Analisar centro de custo "despesas financeiras" se aproveita','João Victor','02/06/2025','03/10/2025','Realizada',''],
+  [25,'Ajustar seguro Hilux que está como seguro patrimonial','João Victor','02/06/2025','03/10/2025','Realizada',''],
+  [26,'Orientar RH e lançadores para começarem a lançar por CC novos depto','João Victor','02/06/2025','01/11/2025','Realizada',''],
+  [27,'Validar com Paulo cadastro sistema tributação 2026','João Victor','28/11/2025','28/11/2025','Realizada','Aguardando José Roberto'],
+  [28,'Validar com Neto relatório de lançamentos de custos sem financeiro e investigar o porquê','Neto','28/11/2025','28/11/2025','Realizada','Se tiver algo que gere possível falta de controle, gerar processo'],
+  [29,'Verificar Bruno Araújo — nova forma de lançamento de rateio de equipamento para aparecer nos custos da frota','Cesar','27/11/2025','18/12/2025','Cancelada',''],
+  [30,'Comparativo faturamento direto comp 2024 X 2025','João Victor','19/12/2025','13/01/2026','Realizada','Percentual do Faturamento Total'],
+  [61,'Envolver prof. Leandro — precisamos de caixa','—','—','—','Falta data',''],
+  [62,'Resgatar processo consórcio inicial: 8M para 4M','—','—','—','Realizada',''],
+  [63,'Fechar DRE Asfalto Fácil com Nubia para seguir com João','João Victor','—','—','Falta data',''],
+  [64,'Mapeamento do fluxo Asfalto Fácil','João Victor','—','—','Não iniciada',''],
+];
+const SI={Realizada:'s0','Em andamento':'s1',Atrasada:'s2',Cancelada:'s3','Falta data':'s4','Não iniciada':'s5','—':'s5'};
+function buildPlano(rows){
+  document.getElementById('plano-h').innerHTML=`<tr>
+    <th style="width:44px;text-align:center">Nº</th>
+    <th style="text-align:left;min-width:320px">Ação / Etapa</th>
+    <th style="min-width:110px;text-align:left">Responsável</th>
+    <th style="min-width:95px">Início</th>
+    <th style="min-width:95px">Término</th>
+    <th style="min-width:140px">Status / Farol</th>
+    <th style="text-align:left;min-width:200px">Observação da Etapa</th>
+  </tr>`;
+  const canEdit=editPlano&&CU?.role!=='viewer';
+  document.getElementById('plano-b').innerHTML=rows.map((r)=>{
+    const ri=PLANO.indexOf(r);
+    if(!canEdit){
+      return`<tr>
+        <td style="text-align:center;font-family:'Roboto Mono',monospace;color:var(--jr-gray2)">${r[0]}</td>
+        <td style="text-align:left;color:var(--jr-dark)">${r[1]}</td>
+        <td style="text-align:left;color:var(--jr-gold3);font-weight:600">${r[2]}</td>
+        <td style="font-family:'Roboto Mono',monospace;font-size:0.76rem">${r[3]}</td>
+        <td style="font-family:'Roboto Mono',monospace;font-size:0.76rem">${r[4]}</td>
+        <td><span class="sb ${SI[r[5]]||'s5'}">${r[5]}</span></td>
+        <td style="text-align:left;color:var(--jr-gray);font-size:0.76rem">${r[6]}</td>
+      </tr>`;
+    }
+    // Edit mode: cells are directly clickable/editable inline
+    return`<tr class="tr-editing">
+      <td style="text-align:center;color:var(--jr-gray2)">${r[0]}</td>
+      <td class="td-edit td-plano" onclick="inlineEditPlanoCell(this,${ri},1)" title="Clique para editar">
+        <span style="color:var(--jr-dark)">${r[1]||'—'}</span>
+      </td>
+      <td class="td-edit td-plano" onclick="inlineEditPlanoCell(this,${ri},2)" title="Clique para editar">
+        <span style="color:var(--jr-gold3);font-weight:600">${r[2]||'—'}</span>
+      </td>
+      <td class="td-edit td-plano" onclick="inlineEditPlanoCell(this,${ri},3)" title="Clique para editar">
+        <span style="font-family:'Roboto Mono',monospace;font-size:0.76rem">${r[3]||'—'}</span>
+      </td>
+      <td class="td-edit td-plano" onclick="inlineEditPlanoCell(this,${ri},4)" title="Clique para editar">
+        <span style="font-family:'Roboto Mono',monospace;font-size:0.76rem">${r[4]||'—'}</span>
+      </td>
+      <td>
+        <select class="sel-inline" onchange="savePlanoField(${ri},5,this.value)">
+          ${['Realizada','Em andamento','Atrasada','Cancelada','Falta data','Não iniciada'].map(s=>`<option${r[5]===s?' selected':''}>${s}</option>`).join('')}
+        </select>
+      </td>
+      <td class="td-edit td-plano" onclick="inlineEditPlanoCell(this,${ri},6)" title="Clique para editar">
+        <span style="color:var(--jr-gray);font-size:0.76rem">${r[6]||'—'}</span>
+      </td>
+    </tr>`;
+  }).join('');
+}
+function inlineEditPlanoCell(td,ri,ci){
+  if(td.querySelector('input,textarea'))return;
+  const v=PLANO[ri][ci]==='—'?'':PLANO[ri][ci];
+  const isLong=ci===1||ci===6; // Ação and Observação get textarea
+  if(isLong){
+    td.innerHTML=`<textarea class="li" rows="2" style="width:100%;resize:vertical"
+      onkeydown="confEditPlano(event,${ri},${ci},this)"
+      onblur="savePlanoField(${ri},${ci},this.value)">${v}</textarea>`;
+  } else {
+    td.innerHTML=`<input class="li" type="text" value="${v}"
+      onkeydown="confEditPlano(event,${ri},${ci},this)"
+      onblur="savePlanoField(${ri},${ci},this.value)">`;
+  }
+  const el=td.querySelector('input,textarea');el.focus();
+  if(el.tagName==='INPUT'){el.select();}
+}
+function confEditPlano(e,ri,ci,inp){
+  if(e.key==='Escape'){buildPlano(PLANO);return;}
+  if(e.key==='Enter'&&inp.tagName==='INPUT'){e.preventDefault();savePlanoField(ri,ci,inp.value);}
+  // Textarea: Enter adds newline naturally, Ctrl+Enter saves
+  if(e.key==='Enter'&&e.ctrlKey&&inp.tagName==='TEXTAREA'){e.preventDefault();savePlanoField(ri,ci,inp.value);}
+}
+function savePlanoField(ri,ci,val){
+  const old=PLANO[ri][ci];
+  if(val===old||val===''&&old==='—'){buildPlano(PLANO);return;}
+  PLANO[ri][ci]=val||'—';
+  pushH({type:'edit',user:CU.label,ts:ts(),icon:'✏️',period:'Plano MASP',lbl:String(PLANO[ri][1]).slice(0,50),oldV:String(old),newV:String(val)});
+  buildPlano(PLANO);toast('Atualizado!');
+}
+function filterPlano(q){
+  const sf=document.getElementById('plano-f').value;
+  buildPlano(PLANO.filter(r=>(r[1]+r[2]).toLowerCase().includes(q.toLowerCase())&&(!sf||r[5]===sf)));
+}
+function toggleEditPlano(){
+  if(CU?.role==='viewer'){toast('Sem permissão','error');return;}
+  editPlano=!editPlano;
+  const b=document.getElementById('plano-edit-btn');
+  b.textContent=editPlano?'🔒 Sair':'✎ Editar';
+  b.classList.toggle('active',editPlano);
+  buildPlano(PLANO);
+  toast(editPlano?'Edição ativada — clique em qualquer célula para editar':'Edição desativada');
+}
+// kept for compat
+function startEditPlano(){}
+function confEditPlanoOld(){}
+function editPlanoStatus(ri,val){savePlanoField(ri,5,val);}
+
+// ══ HISTORY ══
+function renderHist(){
+  const list=document.getElementById('hlist');
+  if(!AH.length){list.innerHTML='<div class="empty">Sem registros de alteração ainda.</div>';return;}
+  list.innerHTML=AH.map(h=>{
+    let body='';
+    if(h.type==='edit')body=`<div><strong>${h.user}</strong> editou <strong>${h.lbl}</strong> em <em>${h.period}</em></div><div class="hmeta"><span class="oldv">${h.oldV}</span> → <span class="newv">${h.newV}</span></div>`;
+    else if(h.type==='newcol')body=`<div><strong>${h.user}</strong> criou coluna <strong>"${h.col}"</strong> (base: ${h.from})</div>`;
+    else if(h.type==='newrow')body=`<div><strong>${h.user}</strong> adicionou linha <strong>"${h.row}"</strong> em ${h.tab}</div>`;
+    else if(h.type==='delcol')body=`<div><strong>${h.user}</strong> removeu coluna <strong>"${h.col}"</strong></div>`;
+    else if(h.type==='login')body=`<div><strong>${h.user}</strong> fez login</div>`;
+    else if(h.type==='logout')body=`<div><strong>${h.user}</strong> saiu do sistema</div>`;
+    else if(h.type==='approve')body=`<div><strong>${h.user}</strong> aprovou cadastro de <strong>${h.target}</strong> como <em>${h.role}</em></div>`;
+    else if(h.type==='reject')body=`<div><strong>${h.user}</strong> rejeitou cadastro de <strong>${h.target}</strong></div>`;
+    return`<div class="hitem"><div class="hico ${h.type}">${h.icon}</div><div class="hbody">${body}</div><div class="hts">${h.ts}</div></div>`;
+  }).join('');
+}
+function clearHist(){if(!confirm('Limpar todo o histórico?'))return;AH=[];localStorage.setItem('jr4_h','[]');renderHist();toast('Histórico limpo.');}
+
+// ══ EXPORT ══
+function exportCSV(){
+  const vis=Object.keys(PD).filter(p=>!HC.includes(p));
+  let csv='Indicador / Linha,'+vis.join(',')+'\n';
+  DROWS.forEach(r=>{
+    if(r.type==='blank')return;
+    const vals=vis.map(p=>{const v=PD[p][r.id];if(v==null||isNaN(+v))return'';return r.type==='percent'?fmtP(v):fmtV(v);});
+    csv+=`"${r.label}",${vals.join(',')}\n`;
+  });
+  const b=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`DRE_JR_${new Date().toISOString().slice(0,10)}.csv`;a.click();toast('CSV exportado!');
+}
+
+// ══ MODALS ══
+function cM(id){document.getElementById(id).style.display='none';}
+</script>
+</body>
+</html>
