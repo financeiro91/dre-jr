@@ -718,11 +718,7 @@ tbody tr:last-child td{border-bottom:none;}
 // USERS — persistent registry (localStorage)
 // ══════════════════════════════════════════════════════════════
 const DEFAULT_USERS={
-  admin:{pass:'admin123',role:'admin',label:'Administrador'},
   joaovictor:{pass:'jv2026',role:'admin',label:'João Victor'},
-  carlecio:{pass:'car2026',role:'editor',label:'Carlécio'},
-  guilherme:{pass:'gui2026',role:'editor',label:'Guilherme'},
-  liliane:{pass:'lil2026',role:'viewer',label:'Liliane'}
 };
 // Merge default + any registered users saved in localStorage
 let USERS=Object.assign({},DEFAULT_USERS,JSON.parse(localStorage.getItem('jr4_users')||'{}'));
