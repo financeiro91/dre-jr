@@ -749,17 +749,79 @@ document.addEventListener('keydown',e=>{
   }
 });
 
-// ── PENDING users (awaiting admin approval) ──────────────────────────────
-function getPending(){return JSON.parse(localStorage.getItem('jr4_pending')||'{}');}
-function savePending(obj){localStorage.setItem('jr4_pending',JSON.stringify(obj));}
+// ── PENDING users — shared via JSONBin (cross-device) ───────────────────
+// JSONBin.io gratuito: armazena JSON acessível de qualquer dispositivo
+// Bin ID e API Key configurados abaixo
+const JSONBIN_BIN = '69e12074aaba88219708022b';
+const JSONBIN_KEY = '$2a$10$ex5TRR8NiNjjh6DclpEkZ.TBesNdhhwAoVg3BsBIFwqUCWfHy935K';
 
-function doLogin(){
-  USERS=Object.assign({},DEFAULT_USERS,JSON.parse(localStorage.getItem('jr4_users')||'{}'));
+async function getPending(){
+  try{
+    const r=await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN}/latest`,{
+      headers:{'X-Master-Key':JSONBIN_KEY,'X-Bin-Meta':'false'}
+    });
+    if(!r.ok)throw new Error();
+    const data=await r.json();
+    return data.pending||{};
+  }catch{
+    // fallback to localStorage if JSONBin not configured
+    return JSON.parse(localStorage.getItem('jr4_pending')||'{}');
+  }
+}
+async function savePending(obj){
+  try{
+    await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN}`,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json','X-Master-Key':JSONBIN_KEY},
+      body:JSON.stringify({pending:obj})
+    });
+  }catch{}
+  // always save locally as backup
+  localStorage.setItem('jr4_pending',JSON.stringify(obj));
+}
+async function getApprovedUsers(){
+  try{
+    const r=await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN}/latest`,{
+      headers:{'X-Master-Key':JSONBIN_KEY,'X-Bin-Meta':'false'}
+    });
+    if(!r.ok)throw new Error();
+    const data=await r.json();
+    return data.users||{};
+  }catch{
+    return JSON.parse(localStorage.getItem('jr4_users')||'{}');
+  }
+}
+async function saveApprovedUsers(obj){
+  try{
+    const pending=await getPending();
+    await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN}`,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json','X-Master-Key':JSONBIN_KEY},
+      body:JSON.stringify({pending,users:obj})
+    });
+  }catch{}
+  localStorage.setItem('jr4_users',JSON.stringify(obj));
+}
+
+function getPendingSync(){return JSON.parse(localStorage.getItem('jr4_pending')||'{}');}
+function savePendingSync(obj){localStorage.setItem('jr4_pending',JSON.stringify(obj));}
+
+async function doLogin(){
+  // Reload approved users from shared storage
+  const sharedUsers=await getApprovedUsers();
+  USERS=Object.assign({},DEFAULT_USERS,sharedUsers);
+  // Also sync to localStorage
+  localStorage.setItem('jr4_users',JSON.stringify(sharedUsers));
+
   const u=document.getElementById('iu').value.trim().toLowerCase();
   const p=document.getElementById('ip').value;
   const errEl=document.getElementById('lerr');
-  // Check if user is pending approval
-  const pending=getPending();
+
+  // Check shared pending list
+  const pending=await getPending();
+  // Sync pending to localStorage
+  localStorage.setItem('jr4_pending',JSON.stringify(pending));
+
   if(pending[u]){
     errEl.textContent='Seu cadastro está aguardando aprovação pelo administrador.';
     errEl.style.display='block';return;
@@ -776,7 +838,7 @@ function doLogin(){
   init();
 }
 
-function doRegister(){
+async function doRegister(){
   const nome=document.getElementById('rg-nome').value.trim();
   const user=document.getElementById('rg-user').value.trim().toLowerCase();
   const pass=document.getElementById('rg-pass').value;
@@ -788,40 +850,44 @@ function doRegister(){
   if(user.length<3){err.textContent='Usuário deve ter ao menos 3 caracteres.';err.style.display='block';return;}
   if(pass.length<6){err.textContent='Senha deve ter ao menos 6 caracteres.';err.style.display='block';return;}
   if(pass!==pass2){err.textContent='As senhas não coincidem.';err.style.display='block';return;}
-  USERS=Object.assign({},DEFAULT_USERS,JSON.parse(localStorage.getItem('jr4_users')||'{}'));
-  if(USERS[user]){err.textContent='Este usuário já existe. Escolha outro.';err.style.display='block';return;}
-  const pending=getPending();
-  if(pending[user]){err.textContent='Já existe uma solicitação pendente para este usuário.';err.style.display='block';return;}
 
-  // Save as pending (no role yet — admin will define)
+  btn.disabled=true;btn.textContent='Verificando...';
+
+  // Check shared storage for conflicts
+  const sharedUsers=await getApprovedUsers();
+  USERS=Object.assign({},DEFAULT_USERS,sharedUsers);
+  if(USERS[user]){
+    err.textContent='Este usuário já existe. Escolha outro.';err.style.display='block';
+    btn.disabled=false;btn.textContent='Solicitar Acesso';return;
+  }
+  const pending=await getPending();
+  if(pending[user]){
+    err.textContent='Já existe uma solicitação pendente para este usuário.';err.style.display='block';
+    btn.disabled=false;btn.textContent='Solicitar Acesso';return;
+  }
+
+  // Save as pending in shared storage
   pending[user]={label:nome,pass,ts:new Date().toLocaleString('pt-BR'),status:'pending'};
-  savePending(pending);
+  await savePending(pending);
 
-  // Send e-mail via EmailJS
-  btn.disabled=true;btn.textContent='Enviando...';
+  btn.textContent='Enviando e-mail...';
+
+  // Send e-mail via EmailJS — params must match template variables exactly
   const params={
-    to_email:'financeiro@jrsantafe.com.br',
     nome_solicitante:nome,
     usuario:user,
     data_hora:new Date().toLocaleString('pt-BR'),
-    reply_to:'financeiro@jrsantafe.com.br',
   };
-  const sendEmail=()=>new Promise((res,rej)=>{
-    if(typeof emailjs==='undefined'){rej(new Error('EmailJS não carregado'));return;}
-    emailjs.send(EMAILJS_SERVICE,EMAILJS_TEMPLATE,params).then(res).catch(rej);
-  });
+  try{
+    if(typeof emailjs==='undefined') throw new Error('EmailJS não carregado');
+    await emailjs.send(EMAILJS_SERVICE,EMAILJS_TEMPLATE,params);
+  }catch(e){
+    console.warn('EmailJS erro:',e);
+    // E-mail failed but pending saved — continue anyway
+  }
 
-  sendEmail()
-    .then(()=>{
-      btn.disabled=false;btn.textContent='Solicitar Acesso';
-      showPanel('panel-pending');
-    })
-    .catch(()=>{
-      // E-mail failed but request is saved — show pending screen anyway
-      btn.disabled=false;btn.textContent='Solicitar Acesso';
-      showPanel('panel-pending');
-      console.warn('EmailJS: não foi possível enviar o e-mail. Verifique as configurações do EmailJS.');
-    });
+  btn.disabled=false;btn.textContent='Solicitar Acesso';
+  showPanel('panel-pending');
 }
 
 function doLogout(){
@@ -835,10 +901,11 @@ function doLogout(){
 function adjFont(d){fontSize=Math.max(11,Math.min(22,fontSize+d));document.documentElement.style.setProperty('--fs',fontSize+'px');}
 
 // ── PENDING APPROVALS PANEL ───────────────────────────────────────────────
-function renderPendingTab(){
-  const pending=getPending();
-  const keys=Object.keys(pending);
+async function renderPendingTab(){
   const list=document.getElementById('pending-list');
+  list.innerHTML='<div class="pempty" style="color:var(--jr-gray)">Carregando...</div>';
+  const pending=await getPending();
+  const keys=Object.keys(pending);
   if(!keys.length){
     list.innerHTML='<div class="pempty"><strong>✔ Nenhuma solicitação pendente</strong>Todas as solicitações de acesso foram processadas.</div>';
     return;
@@ -865,39 +932,42 @@ function renderPendingTab(){
   }).join('');
 }
 
-function approveUser(u){
-  const pending=getPending();
+async function approveUser(u){
+  const pending=await getPending();
   const p=pending[u];
   if(!p)return;
   const role=document.getElementById(`role-${u}`).value;
   const roleLabel={viewer:'Visualizador',editor:'Editor',admin:'Administrador'};
-  // Move to active users
-  const saved=JSON.parse(localStorage.getItem('jr4_users')||'{}');
-  saved[u]={pass:p.pass,role,label:p.label};
-  localStorage.setItem('jr4_users',JSON.stringify(saved));
-  USERS=Object.assign({},DEFAULT_USERS,saved);
+  // Add to shared approved users
+  const sharedUsers=await getApprovedUsers();
+  sharedUsers[u]={pass:p.pass,role,label:p.label};
+  await saveApprovedUsers(sharedUsers);
+  USERS=Object.assign({},DEFAULT_USERS,sharedUsers);
   // Remove from pending
-  delete pending[u];savePending(pending);
+  delete pending[u];
+  await savePending(pending);
   pushH({type:'approve',user:CU.label,ts:ts(),icon:'✅',target:p.label,role:roleLabel[role]});
   updatePendingBadge();
   renderPendingTab();
   toast(`✔ ${p.label} aprovado como ${roleLabel[role]}!`);
 }
 
-function rejectUser(u){
-  const pending=getPending();
+async function rejectUser(u){
+  const pending=await getPending();
   const p=pending[u];
   if(!p)return;
   if(!confirm(`Rejeitar o cadastro de "${p.label}" (@${u})?\n\nO usuário não poderá acessar o sistema.`))return;
-  delete pending[u];savePending(pending);
+  delete pending[u];
+  await savePending(pending);
   pushH({type:'reject',user:CU.label,ts:ts(),icon:'❌',target:p.label});
   updatePendingBadge();
   renderPendingTab();
   toast(`Cadastro de ${p.label} rejeitado.`,'error');
 }
 
-function updatePendingBadge(){
-  const count=Object.keys(getPending()).length;
+async function updatePendingBadge(){
+  const pending=await getPending();
+  const count=Object.keys(pending).length;
   const badge=document.getElementById('pending-badge');
   const tab=document.getElementById('tab-pending');
   if(!badge||!tab)return;
