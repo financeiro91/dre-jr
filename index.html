@@ -2232,10 +2232,11 @@ function buildGraficos(){
   const anualCols=visCols.filter(c=>PD[c]&&!PD[c]._month);
   const anualLabels=anualCols.map(c=>c.replace('Ano ','').replace(' PE Plano',' P').replace('PLANO ','P').replace('Nova Meta G4','Meta G4').replace('Plano ','P'));
   const anualVals=anualCols.map(c=>+PD[c]?.[campo]||0);
-  const anualColors=anualCols.map(c=>PD[c]?._t==='plan'||PD[c]?._t==='meta'?C.gold:C.red);
+  const anualColors=anualCols.map(c=>PD[c]?._t==='plan'||PD[c]?._t==='meta'?C.gold:PD[c]?._t==='real'?C.red:'#6B6B6B');
 
   // ── Dados mensais 2026 — colunas visíveis com _month ───────
   const mensalCols=visCols.filter(k=>PD[k]?._month);
+
   const mensalLabels=mensalCols.map(k=>PD[k]._month+' '+(PD[k]._t==='real'?'Real':''));
 
   // ── Formatador ────────────────────────────────────────────
@@ -2304,7 +2305,7 @@ function buildGraficos(){
   // ── Gráfico 3: % CSV ──────────────────────────────────────
   destroyChart('csv');
   const ctx3=document.getElementById('graf-csv').getContext('2d');
-  const csvRealCols=anualCols.filter(c=>PD[c]?._t==='real');
+  const csvRealCols=Object.keys(PD).filter(c=>PD[c]._t==='real'&&!PD[c]._month);
   const csvReal=csvRealCols.map(c=>+(PD[c]?.csv_p||0)*100);
   const csvLbls=csvRealCols.map(c=>c.replace('Ano ','').replace(' Real',''));
   _charts['csv']=new Chart(ctx3,{
