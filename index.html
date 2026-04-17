@@ -564,6 +564,7 @@ tbody tr:last-child td{border-bottom:none;}
     <div class="tab" onclick="swTab(this,'t-dre')">DRE Principal</div>
     <div class="tab" onclick="swTab(this,'t-bal')">Balanço Patrimonial</div>
     <div class="tab" onclick="swTab(this,'t-plano')">Plano de Ação MASP</div>
+    <div class="tab" onclick="swTab(this,'t-fc')">💰 Fluxo de Caixa</div>
     <div class="tab" onclick="swTab(this,'t-graf')">📈 Gráficos</div>
     <div class="tab" onclick="swTab(this,'t-hist')">Histórico</div>
     <div class="tab" id="tab-pending" style="display:none" onclick="swTab(this,'t-pending')">
@@ -658,6 +659,29 @@ tbody tr:last-child td{border-bottom:none;}
         </select>
       </div>
       <div class="twrap"><table><thead id="plano-h"></thead><tbody id="plano-b"></tbody></table></div>
+    </div>
+
+    <!-- FLUXO DE CAIXA SEMANAL -->
+    <div id="t-fc" style="display:none">
+      <div class="phdr">
+        <div class="ptitle">Fluxo de Caixa Semanal<small>JR Santa Fé Pavimentação e Construções Ltda</small></div>
+        <div class="phdr-actions">
+          <button class="tbtn" onclick="addFCSemana()">+ Nova Semana</button>
+          <button class="tbtn" onclick="addFCLinha('Credito')">+ Crédito</button>
+          <button class="tbtn" onclick="addFCLinha('Debito')">+ Débito</button>
+          <button id="fc-edit-btn" class="tbtn" onclick="toggleEditFC()">✎ Editar</button>
+        </div>
+      </div>
+
+      <!-- Indicadores de topo -->
+      <div id="fc-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:14px"></div>
+
+      <div style="overflow-x:auto">
+        <table class="dre-table" id="fc-table">
+          <thead id="fc-head"></thead>
+          <tbody id="fc-body"></tbody>
+        </table>
+      </div>
     </div>
 
     <!-- GRÁFICOS -->
@@ -1502,13 +1526,14 @@ function toast(m,t=''){const el=document.getElementById('toast');el.textContent=
 function swTab(el,id){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
-  ['t-dash','t-dre','t-bal','t-plano','t-graf','t-hist','t-pending'].forEach(i=>{
+  ['t-dash','t-dre','t-bal','t-plano','t-fc','t-graf','t-hist','t-pending'].forEach(i=>{
     const el2=document.getElementById(i);if(el2)el2.style.display=i===id?'block':'none';
   });
   if(id==='t-hist')renderHist();
   if(id==='t-pending')renderPendingTab();
   if(id==='t-graf')buildGraficos();
   if(id==='t-dash')buildDashboard();
+  if(id==='t-fc'){loadFCFromSupabase().then(()=>buildFC());}
 }
 
 // ══ INIT ══
@@ -2540,6 +2565,16 @@ function exportXLSX(){
   wsPlano['!cols']=[{wch:5},{wch:60},{wch:18},{wch:12},{wch:12},{wch:16},{wch:40}];
   XLSX.utils.book_append_sheet(wb,wsPlano,'Plano de Ação MASP');
 
+  // ── Fluxo de Caixa sheet ───────────────────────────────────
+  const fcData=[['Conta','Descrição',...FC.semanas]];
+  FC.linhas.forEach(l=>{
+    if(!l.desc&&!l.tipo)return;
+    fcData.push([l.tipo,l.desc,...FC.semanas.map(s=>fcResolve(l.vals[s])||'')]);
+  });
+  const wsFC=XLSX.utils.aoa_to_sheet(fcData);
+  wsFC['!cols']=[{wch:16},{wch:32},...FC.semanas.map(()=>({wch:16}))];
+  XLSX.utils.book_append_sheet(wb,wsFC,'Fluxo de Caixa Semanal');
+
   // Download
   XLSX.writeFile(wb,`DRE_JR_${new Date().toISOString().slice(0,10)}.xlsx`);
   toast('Excel exportado com sucesso!');
@@ -2713,6 +2748,223 @@ function doLogout(){
   document.getElementById('ip').value='';
   showPanel('panel-login');
 }
+
+// ══════════════════════════════════════════════════════════════
+// FLUXO DE CAIXA SEMANAL
+// ══════════════════════════════════════════════════════════════
+
+// Estrutura de dados FC
+let FC = {
+  semanas: ['9/3 a 15/3','14/3 a 20/3','21/3 a 27/3','28/3 a 2/4','03/04 a 10/04','11/04 a 17/04'],
+  realizado: {}, // semana -> valor realizado (FC Realizado linha 2)
+  linhas: [
+    // [tipo, descricao, {semana: valor}, formula_acum]
+    {tipo:'total_cred', desc:'Totalizador Crédito',   vals:{}, formula:'sum_cred', bold:true},
+    {tipo:'Credito',    desc:'Saldo em Contas',        vals:{'14/3 a 20/3':5837.12,'21/3 a 27/3':11243.46,'28/3 a 2/4':605764.56,'03/04 a 10/04':164248.92,'11/04 a 17/04':3478.52}},
+    {tipo:'Credito',    desc:'nf Suzanápolis',         vals:{'14/3 a 20/3':42544.93}},
+    {tipo:'Credito',    desc:'Estado Fernandopolis',   vals:{'14/3 a 20/3':1123000,'11/04 a 17/04':'=953000+114000'}},
+    {tipo:'Credito',    desc:'fernandopolis',          vals:{'14/3 a 20/3':100000,'21/3 a 27/3':100000,'28/3 a 2/4':100000,'03/04 a 10/04':85604.03,'11/04 a 17/04':85604.03}},
+    {tipo:'Credito',    desc:'DER',                    vals:{'21/3 a 27/3':440955.01}},
+    {tipo:'Credito',    desc:'Palmeira d Oeste',       vals:{'21/3 a 27/3':73000}},
+    {tipo:'Credito',    desc:'Estado Ouroeste',        vals:{}},
+    {tipo:'Credito',    desc:'Limeira',                vals:{'28/3 a 2/4':650000,'03/04 a 10/04':562000,'11/04 a 17/04':290000}},
+    {tipo:'Credito',    desc:'Receber em atraso',      vals:{}, cor:'red'},
+    {tipo:'Credito',    desc:'Previsão Faturamento',   vals:{}},
+    {tipo:'Credito',    desc:'Outras Entradas',        vals:{}},
+    {tipo:'total_deb',  desc:'Totalizador Débitos',    vals:{}, formula:'sum_deb', bold:true},
+    {tipo:'Debito',     desc:'A Pagar no sistema',     vals:{}, formula:'sum_ap'},
+    {tipo:'Debito',     desc:'Duplicatas a pagar em atraso', vals:{'14/3 a 20/3':1114596.38,'21/3 a 27/3':'=1393348.66+128952.31-650000','28/3 a 2/4':'=50000+149905.67+50000+1456221.6+7500+10500','03/04 a 10/04':'=80000+45000+60000+5000+658580.17','11/04 a 17/04':'=1482187.36-680000'}},
+    {tipo:'Debito',     desc:'Duplicatas a pagar semana', vals:{'14/3 a 20/3':566453.1,'21/3 a 27/3':470073.02,'28/3 a 2/4':'=657200.26+59000+20000+132284+80200','03/04 a 10/04':'=393409.65+400000+20000','11/04 a 17/04':'=515795.42+120000+37700'}},
+    {tipo:'Debito',     desc:'Previsão Fornecedor',    vals:{}},
+    {tipo:'Debito',     desc:'Impostos/Tributos',      vals:{}},
+    {tipo:'Debito',     desc:'Parcelas a Pagar Bancos',vals:{}},
+    {tipo:'Debito',     desc:'Folha de Pagamento',     vals:{}},
+    {tipo:'Debito',     desc:'Vale alimentação',       vals:{}},
+    {tipo:'Debito',     desc:'Impostos Folha Pgto',    vals:{}},
+    {tipo:'Debito',     desc:'',                       vals:{}},
+    {tipo:'Debito',     desc:'',                       vals:{}},
+    {tipo:'Debito',     desc:'Outros',                 vals:{}},
+  ]
+};
+
+let editFC = false;
+
+// Resolver valor de célula (fórmula ou número)
+function fcResolve(v){
+  if(v===null||v===undefined||v==='')return 0;
+  if(typeof v==='number')return v;
+  if(typeof v==='string'&&v.startsWith('=')){
+    try{return eval(v.slice(1).replace(/[A-Z]/g,'').replace(/[+\-*/]/g,m=>m));}
+    catch{
+      // parse simple additions/multiplications
+      try{return Function('"use strict";return ('+v.slice(1)+')')();}
+      catch{return 0;}
+    }
+  }
+  return +v||0;
+}
+
+// Calcular totalizadores
+function fcCalc(){
+  FC.semanas.forEach(s=>{
+    // Total Créditos = sum de linhas Credito
+    const sumCred = FC.linhas.filter(l=>l.tipo==='Credito').reduce((a,l)=>a+fcResolve(l.vals[s]),0);
+    FC.linhas.find(l=>l.tipo==='total_cred').vals[s]=sumCred;
+    // A Pagar = dup_atraso + dup_semana
+    const idx_ap=FC.linhas.findIndex(l=>l.desc==='A Pagar no sistema');
+    const idx_da=FC.linhas.findIndex(l=>l.desc==='Duplicatas a pagar em atraso');
+    const idx_ds=FC.linhas.findIndex(l=>l.desc==='Duplicatas a pagar semana');
+    if(idx_ap>=0&&idx_da>=0&&idx_ds>=0){
+      FC.linhas[idx_ap].vals[s]=fcResolve(FC.linhas[idx_da].vals[s])+fcResolve(FC.linhas[idx_ds].vals[s]);
+    }
+    // Total Débitos = A Pagar + outros débitos
+    const sumDeb = FC.linhas.filter(l=>l.tipo==='Debito'&&l.desc!=='A Pagar no sistema'&&l.desc!=='Duplicatas a pagar em atraso'&&l.desc!=='Duplicatas a pagar semana').reduce((a,l)=>a+fcResolve(l.vals[s]),0)
+      + fcResolve(FC.linhas.find(l=>l.desc==='A Pagar no sistema')?.vals[s]);
+    FC.linhas.find(l=>l.tipo==='total_deb').vals[s]=sumDeb;
+  });
+}
+
+// FC Planejado acumulado: C3=C5-C17, D3=C3+D5-D17...
+function fcPlanejado(){
+  const result={};
+  let acum=0;
+  FC.semanas.forEach((s,i)=>{
+    const cred=fcResolve(FC.linhas.find(l=>l.tipo==='total_cred').vals[s]);
+    const deb=fcResolve(FC.linhas.find(l=>l.tipo==='total_deb').vals[s]);
+    acum = i===0 ? cred-deb : acum+cred-deb;
+    result[s]=acum;
+  });
+  return result;
+}
+
+// FC % Atendimento = Realizado / Planejado
+function fcAtendimento(plan){
+  const result={};
+  FC.semanas.forEach(s=>{
+    const real=fcResolve(FC.realizado[s]);
+    const pl=plan[s]||0;
+    result[s]=pl!==0?real/pl:0;
+  });
+  return result;
+}
+
+function buildFC(){
+  fcCalc();
+  const plan=fcPlanejado();
+  const atend=fcAtendimento(plan);
+
+  // KPIs
+  const ultimaSem=FC.semanas[FC.semanas.length-1];
+  const totalCred=fcResolve(FC.linhas.find(l=>l.tipo==='total_cred').vals[ultimaSem]);
+  const totalDeb=fcResolve(FC.linhas.find(l=>l.tipo==='total_deb').vals[ultimaSem]);
+  const saldo=plan[ultimaSem]||0;
+  document.getElementById('fc-kpis').innerHTML=[
+    {l:'Total Créditos',v:'R$ '+(totalCred/1e3).toFixed(0)+'k',s:ultimaSem,ac:'k-gold'},
+    {l:'Total Débitos',v:'R$ '+(totalDeb/1e3).toFixed(0)+'k',s:ultimaSem,ac:'k-red'},
+    {l:'FC Planejado Acum.',v:(saldo<0?'-':'')+'R$ '+(Math.abs(saldo)/1e3).toFixed(0)+'k',s:'Acumulado',ac:saldo>=0?'k-green':'k-red'},
+    {l:'Semanas cadastradas',v:FC.semanas.length,s:'períodos ativos',ac:'k-gold'},
+  ].map(k=>`<div class="kcard ${k.ac}" style="padding:14px"><div class="klbl">${k.l}</div><div class="kval" style="font-size:1.5rem">${k.v}</div><div class="ksub">${k.s}</div></div>`).join('');
+
+  // Cabeçalho
+  document.getElementById('fc-head').innerHTML=`<tr>
+    <th style="min-width:110px">Conta</th>
+    <th style="min-width:200px">Descrição</th>
+    ${FC.semanas.map(s=>`<th class="th-real">${s}</th>`).join('')}
+  </tr>
+  <tr style="background:#1a2e1a">
+    <td colspan="2" style="color:var(--jr-gold);font-weight:700;font-size:.7rem;padding:4px 8px">% ATENDIMENTO</td>
+    ${FC.semanas.map(s=>`<td style="text-align:right;color:var(--jr-gold);font-size:.72rem;font-weight:700;padding:4px 6px">${atend[s]?(atend[s]*100).toFixed(1)+'%':'—'}</td>`).join('')}
+  </tr>
+  <tr style="background:#0d1f0d">
+    <td colspan="2" style="color:#5EAD62;font-weight:700;font-size:.7rem;padding:4px 8px">FC PLANEJADO (Acumulado)</td>
+    ${FC.semanas.map(s=>`<td style="text-align:right;color:${(plan[s]||0)>=0?'#5EAD62':'var(--neg)'};font-size:.72rem;font-weight:700;padding:4px 6px">${fmtV(plan[s]||0)}</td>`).join('')}
+  </tr>
+  <tr style="background:#0d1f0d">
+    <td colspan="2" style="color:#aaa;font-size:.7rem;padding:4px 8px">FC REALIZADO</td>
+    ${FC.semanas.map(s=>`<td style="text-align:right;color:#aaa;font-size:.72rem;padding:4px 6px">${FC.realizado[s]?fmtV(fcResolve(FC.realizado[s])):'—'}</td>`).join('')}
+  </tr>`;
+
+  // Corpo
+  document.getElementById('fc-body').innerHTML=FC.linhas.map((l,li)=>{
+    if(!l.desc&&!l.tipo)return'';
+    const isTot=l.tipo==='total_cred'||l.tipo==='total_deb';
+    const cls=isTot?'r-total':l.tipo==='Credito'?'':'r-pct';
+    const corStyle=l.cor==='red'?'color:var(--neg)':'';
+    const cells=FC.semanas.map((s,si)=>{
+      const v=l.vals[s];
+      const vn=fcResolve(v);
+      const disp=isTot?`<strong>${fmtV(vn)}</strong>`:fmtV(vn);
+      const colorCls=!isTot&&vn!==0?vc(vn):'';
+      if(editFC&&!isTot&&CU?.role!=='viewer'){
+        const rawVal=v!==null&&v!==undefined?String(v):'';
+        return`<td><input class="ci" style="width:110px;text-align:right" value="${rawVal}" onblur="saveFCCell(${li},'${s}',this.value)" onkeydown="if(event.key==='Enter'||event.key==='Tab'){event.preventDefault();saveFCCell(${li},'${s}',this.value);}"></td>`;
+      }
+      return`<td class="${colorCls}" style="text-align:right">${vn!==0||isTot?disp:'—'}</td>`;
+    }).join('');
+    return`<tr class="${cls}"><td style="${corStyle}">${l.tipo!=='total_cred'&&l.tipo!=='total_deb'?l.tipo:''}</td><td style="${corStyle}${l.bold?';font-weight:700':''}">${l.desc}</td>${cells}</tr>`;
+  }).join('');
+}
+
+function saveFCCell(li, semana, val){
+  const num=val.startsWith('=')?val:+val.replace(/\./g,'').replace(',','.')||val||null;
+  FC.linhas[li].vals[semana]=num;
+  // Save to Supabase
+  sbFetch('fluxo_caixa',{
+    method:'POST',
+    prefer:'resolution=merge-duplicates',
+    body:JSON.stringify({linha_idx:li,semana,valor:String(val||''),descricao:FC.linhas[li].desc,tipo:FC.linhas[li].tipo})
+  }).catch(e=>console.warn('FC save err:',e));
+  buildFC();
+  toast('FC atualizado!');
+}
+
+function toggleEditFC(){
+  if(CU?.role==='viewer'){toast('Sem permissão','error');return;}
+  editFC=!editFC;
+  const b=document.getElementById('fc-edit-btn');
+  b.textContent=editFC?'🔒 Sair da Edição':'✎ Editar';
+  b.classList.toggle('active',editFC);
+  buildFC();
+  toast(editFC?'Edição ativada — clique em qualquer célula':'Edição desativada');
+}
+
+function addFCSemana(){
+  if(CU?.role==='viewer'){toast('Sem permissão','error');return;}
+  const label=prompt('Nome da nova semana (ex: 18/04 a 24/04):');
+  if(!label||!label.trim())return;
+  FC.semanas.push(label.trim());
+  buildFC();
+  toast(`Semana "${label.trim()}" adicionada!`);
+}
+
+function addFCLinha(tipo){
+  if(CU?.role==='viewer'){toast('Sem permissão','error');return;}
+  const desc=prompt(`Descrição da nova linha de ${tipo}:`);
+  if(!desc||!desc.trim())return;
+  // Insert before total_deb if Credito, at end if Debito
+  const idx=tipo==='Credito'?FC.linhas.findIndex(l=>l.tipo==='total_deb'):FC.linhas.length;
+  FC.linhas.splice(idx,0,{tipo,desc:desc.trim(),vals:{}});
+  buildFC();
+  toast(`Linha "${desc.trim()}" adicionada!`);
+}
+
+async function loadFCFromSupabase(){
+  try{
+    const rows=await sbFetch('fluxo_caixa?select=*&order=linha_idx.asc');
+    if(!rows||!rows.length)return;
+    rows.forEach(r=>{
+      if(r.linha_idx>=0&&r.linha_idx<FC.linhas.length){
+        FC.linhas[r.linha_idx].vals[r.semana]=r.valor;
+      }
+    });
+  }catch(e){console.warn('loadFC error:',e);}
+}
+
+// Load FC on startup silently
+loadFCFromSupabase().then(()=>{
+  const tab=document.getElementById('t-fc');
+  if(tab&&tab.style.display!=='none')buildFC();
+});
 
 function promptSaveVersion(){
   const label=prompt('Nome para esta versão (ex: "Fechamento Fev/26"):');
