@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JR Pavimentação — DRE 2026</title>
+<title>JR Santa Fé Pavimentação — DRE 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Open+Sans:wght@400;500;600&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -453,7 +453,7 @@ tbody tr:last-child td{border-bottom:none;}
   <div class="lcard" id="panel-login">
     <div class="llogo">
       <div class="llogo-icon"><span>JR<em>.</em></span></div>
-      <div class="lbrand">JR Pavimentação e Construções</div>
+      <div class="lbrand">JR Santa Fé Pavimentação</div>
       <div class="lsub">Sistema Financeiro — DRE 2026</div>
       <div class="lbar"></div>
     </div>
@@ -538,8 +538,8 @@ tbody tr:last-child td{border-bottom:none;}
         <div class="topbrand-txt">JR<em>.</em></div>
       </div>
       <div>
-        <div style="font-family:'Oswald',sans-serif;font-size:0.9rem;font-weight:600;color:#fff;letter-spacing:.08em;">JR Pavimentação e Construções</div>
-        <div class="topbrand-sub">Sistema Financeiro — DRE 2026</div>
+        <div style="font-family:'Oswald',sans-serif;font-size:0.9rem;font-weight:600;color:#fff;letter-spacing:.08em;">JR Santa Fé Pavimentação e Construções</div>
+        <div class="topbrand-sub">CNPJ: 65.472.078/0001-54 · Sistema Financeiro — DRE 2026</div>
       </div>
     </div>
     <div class="topact">
@@ -584,14 +584,14 @@ tbody tr:last-child td{border-bottom:none;}
       <!-- KPI Cards grandes -->
       <div id="dash-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:24px"></div>
       <!-- Charts row -->
-      <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px">
-        <div class="kcard" style="padding:20px">
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px">
+        <div class="kcard" style="padding:14px">
           <div class="klbl">Faturamento vs Receita Líquida vs EBITDA — Período selecionado</div>
-          <canvas id="dash-bar" height="180"></canvas>
+          <canvas id="dash-bar" height="130"></canvas>
         </div>
-        <div class="kcard" style="padding:20px">
+        <div class="kcard" style="padding:14px">
           <div class="klbl">Distribuição do Faturamento</div>
-          <canvas id="dash-donut" height="180"></canvas>
+          <canvas id="dash-donut" height="130"></canvas>
         </div>
       </div>
       <!-- Semáforos metas -->
@@ -605,7 +605,7 @@ tbody tr:last-child td{border-bottom:none;}
     <div id="t-dre" style="display:none">
       <div id="kpi-area" class="kgrid"></div>
       <div class="phdr">
-        <div class="ptitle">Demonstração do Resultado do Exercício<small>JR Pavimentação e Construções — Santa Fé do Sul / SP</small></div>
+        <div class="ptitle">Demonstração do Resultado do Exercício<small>JR Santa Fé Pavimentação e Construções Ltda · CNPJ: 65.472.078/0001-54 · Rua dos Bandeirantes, nº 1220-A – Distrito Industrial V · CEP 15.779-050 – Estância Turística de Santa Fé do Sul/SP</small></div>
         <div class="phdr-actions">
           <button class="btn-add" onclick="openNewMonth()">+ Novo Mês</button>
           <button class="btn-del" id="btn-del" style="display:none" onclick="delPer()">✕ Excluir coluna</button>
@@ -674,28 +674,28 @@ tbody tr:last-child td{border-bottom:none;}
           </select>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-        <div class="kcard k-gold" style="padding:20px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div class="kcard k-gold" style="padding:14px">
           <div class="klbl">Indicador selecionado — Evolução Anual</div>
-          <canvas id="graf-anual" height="220"></canvas>
+          <canvas id="graf-anual" height="140"></canvas>
         </div>
-        <div class="kcard k-red" style="padding:20px">
+        <div class="kcard k-red" style="padding:14px">
           <div class="klbl">2026 — Mensal (Plano vs Real)</div>
-          <canvas id="graf-mensal" height="220"></canvas>
+          <canvas id="graf-mensal" height="140"></canvas>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
-        <div class="kcard" style="padding:20px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div class="kcard" style="padding:14px">
           <div class="klbl">% CSV Real — Evolução</div>
-          <canvas id="graf-csv" height="180"></canvas>
+          <canvas id="graf-csv" height="120"></canvas>
         </div>
-        <div class="kcard" style="padding:20px">
+        <div class="kcard" style="padding:14px">
           <div class="klbl">% Margem de Contribuição — Evolução</div>
-          <canvas id="graf-mc" height="180"></canvas>
+          <canvas id="graf-mc" height="120"></canvas>
         </div>
-        <div class="kcard" style="padding:20px">
+        <div class="kcard" style="padding:14px">
           <div class="klbl">% EBITDA — Evolução</div>
-          <canvas id="graf-ebt" height="180"></canvas>
+          <canvas id="graf-ebt" height="120"></canvas>
         </div>
       </div>
     </div>
@@ -2186,15 +2186,17 @@ function buildGraficos(){
   const C={red:'#8B1A22',gold:'#C9A227',green:'#2E7D32',gray:'#9A9A9A',
            redA:'rgba(139,26,34,.15)',goldA:'rgba(201,162,39,.15)',greenA:'rgba(46,125,50,.15)'};
 
-  // ── Dados anuais (colunas sem _month) ─────────────────────
-  const anualCols=['Plano 2022','Ano 2022','Ano 2023 PE Plano','Ano 2023 Real',
-                   'Ano 2024','Ano 2025 PE Plano','Ano 2025 Real','PLANO 2026','Nova Meta G4'];
-  const anualLabels=anualCols.map(c=>c.replace('Ano ','').replace('PE Plano','P').replace('PLANO ','P').replace('Nova Meta G4','Meta G4'));
+  // ── Usar apenas colunas visíveis (não ocultas) ─────────────
+  const visCols=getOrderedCols().filter(p=>!HC.includes(p));
+
+  // ── Dados anuais — colunas visíveis sem _month ─────────────
+  const anualCols=visCols.filter(c=>PD[c]&&!PD[c]._month);
+  const anualLabels=anualCols.map(c=>c.replace('Ano ','').replace(' PE Plano',' P').replace('PLANO ','P').replace('Nova Meta G4','Meta G4').replace('Plano ','P'));
   const anualVals=anualCols.map(c=>+PD[c]?.[campo]||0);
   const anualColors=anualCols.map(c=>PD[c]?._t==='plan'||PD[c]?._t==='meta'?C.gold:C.red);
 
-  // ── Dados mensais 2026 ────────────────────────────────────
-  const mensalCols=Object.keys(PD).filter(k=>PD[k]._month);
+  // ── Dados mensais 2026 — colunas visíveis com _month ───────
+  const mensalCols=visCols.filter(k=>PD[k]?._month);
   const mensalLabels=mensalCols.map(k=>PD[k]._month+' '+(PD[k]._t==='real'?'Real':''));
 
   // ── Formatador ────────────────────────────────────────────
@@ -2578,15 +2580,14 @@ function buildDashboard(per){
   destroyDashChart('bar');
   const ctx1=document.getElementById('dash-bar')?.getContext('2d');
   if(ctx1){
-    const anualCols=['Plano 2022','Ano 2022','Ano 2023 PE Plano','Ano 2023 Real',
-                     'Ano 2024','Ano 2025 PE Plano','Ano 2025 Real','PLANO 2026',per==='PLANO 2026'?null:per].filter(Boolean);
-    const labels=anualCols.map(c=>c.replace('Ano ','').replace(' PE Plano','P').replace('PLANO ','P'));
+    const dashCols=getOrderedCols().filter(p=>!HC.includes(p)&&PD[p]&&!PD[p]._month);
+    const labels=dashCols.map(c=>c.replace('Ano ','').replace(' PE Plano','P').replace('PLANO ','P').replace('Nova Meta G4','Meta G4').replace('Plano ','P'));
     _dashCharts['bar']=new Chart(ctx1,{
       type:'bar',
       data:{labels,datasets:[
-        {label:'Faturamento',data:anualCols.map(c=>+(PD[c]?.fat||0)/1e6),backgroundColor:'rgba(139,26,34,.7)',borderRadius:3},
-        {label:'Receita Líquida',data:anualCols.map(c=>+(PD[c]?.rl||0)/1e6),backgroundColor:'rgba(201,162,39,.7)',borderRadius:3},
-        {label:'EBITDA',data:anualCols.map(c=>+(PD[c]?.ebt||0)/1e6),backgroundColor:'rgba(46,125,50,.7)',borderRadius:3},
+        {label:'Faturamento',data:dashCols.map(c=>+(PD[c]?.fat||0)/1e6),backgroundColor:'rgba(139,26,34,.7)',borderRadius:3},
+        {label:'Receita Líquida',data:dashCols.map(c=>+(PD[c]?.rl||0)/1e6),backgroundColor:'rgba(201,162,39,.7)',borderRadius:3},
+        {label:'EBITDA',data:dashCols.map(c=>+(PD[c]?.ebt||0)/1e6),backgroundColor:'rgba(46,125,50,.7)',borderRadius:3},
       ]},
       options:{responsive:true,maintainAspectRatio:false,
         plugins:{tooltip:{callbacks:{label:c=>c.dataset.label+': R$ '+c.raw.toFixed(2)+'M'}}},
