@@ -2272,10 +2272,9 @@ function buildGraficos(){
   destroyChart('mensal');
   const ctx2=document.getElementById('graf-mensal').getContext('2d');
   const meses=[...new Set(mensalCols.map(k=>PD[k]._month))];
-  const planVals2026=meses.map(m=>{
-    const k=Object.keys(PD).find(k=>PD[k]._month===m&&PD[k]._t==='plan');
-    return k?+PD[k][campo]||0:null;
-  });
+  // Plano = Nova Meta Mês (mesmo valor para todos os meses)
+  const metaMes=+PD['Nova Meta Mês']?.[campo]||0;
+  const planVals2026=meses.map(()=>metaMes);
   const realVals2026=meses.map(m=>{
     const k=Object.keys(PD).find(k=>PD[k]._month===m&&PD[k]._t==='real');
     return k?+PD[k][campo]||0:null;
