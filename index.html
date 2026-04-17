@@ -586,12 +586,16 @@ tbody tr:last-child td{border-bottom:none;}
       <!-- Charts row -->
       <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px">
         <div class="kcard" style="padding:14px">
-          <div class="klbl">Faturamento vs Receita Líquida vs EBITDA — Período selecionado</div>
-          <canvas id="dash-bar" height="130"></canvas>
+          <div class="klbl">Faturamento vs Receita Líquida vs EBITDA</div>
+          <div style="position:relative;height:160px">
+            <canvas id="dash-bar"></canvas>
+          </div>
         </div>
         <div class="kcard" style="padding:14px">
           <div class="klbl">Distribuição do Faturamento</div>
-          <canvas id="dash-donut" height="130"></canvas>
+          <div style="position:relative;height:160px">
+            <canvas id="dash-donut"></canvas>
+          </div>
         </div>
       </div>
       <!-- Semáforos metas -->
@@ -677,25 +681,35 @@ tbody tr:last-child td{border-bottom:none;}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
         <div class="kcard k-gold" style="padding:14px">
           <div class="klbl">Indicador selecionado — Evolução Anual</div>
-          <canvas id="graf-anual" height="140"></canvas>
+          <div style="position:relative;height:160px">
+            <canvas id="graf-anual"></canvas>
+          </div>
         </div>
         <div class="kcard k-red" style="padding:14px">
           <div class="klbl">2026 — Mensal (Plano vs Real)</div>
-          <canvas id="graf-mensal" height="140"></canvas>
+          <div style="position:relative;height:160px">
+            <canvas id="graf-mensal"></canvas>
+          </div>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
         <div class="kcard" style="padding:14px">
           <div class="klbl">% CSV Real — Evolução</div>
-          <canvas id="graf-csv" height="120"></canvas>
+          <div style="position:relative;height:130px">
+            <canvas id="graf-csv"></canvas>
+          </div>
         </div>
         <div class="kcard" style="padding:14px">
           <div class="klbl">% Margem de Contribuição — Evolução</div>
-          <canvas id="graf-mc" height="120"></canvas>
+          <div style="position:relative;height:130px">
+            <canvas id="graf-mc"></canvas>
+          </div>
         </div>
         <div class="kcard" style="padding:14px">
           <div class="klbl">% EBITDA — Evolução</div>
-          <canvas id="graf-ebt" height="120"></canvas>
+          <div style="position:relative;height:130px">
+            <canvas id="graf-ebt"></canvas>
+          </div>
         </div>
       </div>
     </div>
@@ -2215,14 +2229,16 @@ function buildGraficos(){
         data:anualVals,
         backgroundColor:anualColors,
         borderColor:anualColors,
-        borderWidth:1,borderRadius:3
+        borderWidth:1,borderRadius:2
       }]
     },
     options:{
       responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)}}},
-      scales:{y:{ticks:{callback:v=>fmt(v)},grid:{color:'rgba(0,0,0,.05)'}},
-              x:{grid:{display:false}}}
+      scales:{
+        y:{ticks:{callback:v=>fmt(v),font:{size:9}},grid:{color:'rgba(0,0,0,.05)'}},
+        x:{ticks:{font:{size:9},maxRotation:45},grid:{display:false}}
+      }
     }
   });
 
@@ -2243,62 +2259,68 @@ function buildGraficos(){
     data:{
       labels:meses,
       datasets:[
-        {label:'Plano',data:planVals2026,backgroundColor:C.goldA,borderColor:C.gold,borderWidth:2,borderRadius:3},
-        {label:'Real', data:realVals2026,backgroundColor:C.redA, borderColor:C.red, borderWidth:2,borderRadius:3}
+        {label:'Plano',data:planVals2026,backgroundColor:C.goldA,borderColor:C.gold,borderWidth:2,borderRadius:2},
+        {label:'Real', data:realVals2026,backgroundColor:C.redA, borderColor:C.red, borderWidth:2,borderRadius:2}
       ]
     },
     options:{
       responsive:true,maintainAspectRatio:false,
-      plugins:{tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}},
-      scales:{y:{ticks:{callback:v=>fmt(v)},grid:{color:'rgba(0,0,0,.05)'}},
-              x:{grid:{display:false}}}
+      plugins:{
+        legend:{position:'top',labels:{font:{size:10},boxWidth:10}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}
+      },
+      scales:{
+        y:{ticks:{callback:v=>fmt(v),font:{size:9}},grid:{color:'rgba(0,0,0,.05)'}},
+        x:{ticks:{font:{size:9}},grid:{display:false}}
+      }
     }
   });
 
   // ── Gráfico 3: % CSV ──────────────────────────────────────
   destroyChart('csv');
   const ctx3=document.getElementById('graf-csv').getContext('2d');
-  const csvReal=anualCols.filter(c=>PD[c]?._t==='real').map(c=>+(PD[c]?.csv_p||0)*100);
-  const csvLbls=anualCols.filter(c=>PD[c]?._t==='real').map(c=>c.replace('Ano ','').replace(' Real',''));
+  const csvRealCols=anualCols.filter(c=>PD[c]?._t==='real');
+  const csvReal=csvRealCols.map(c=>+(PD[c]?.csv_p||0)*100);
+  const csvLbls=csvRealCols.map(c=>c.replace('Ano ','').replace(' Real',''));
   _charts['csv']=new Chart(ctx3,{
     type:'line',
     data:{labels:csvLbls,datasets:[
-      {label:'% CSV',data:csvReal,borderColor:C.red,backgroundColor:C.redA,tension:.3,fill:true,pointRadius:4},
+      {label:'% CSV',data:csvReal,borderColor:C.red,backgroundColor:C.redA,tension:.3,fill:true,pointRadius:3},
       {label:'Meta 72%',data:csvLbls.map(()=>72),borderColor:C.gold,borderDash:[5,5],pointRadius:0,borderWidth:1.5}
     ]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(1)+'%'}}},
-      scales:{y:{ticks:{callback:v=>v+'%'},min:50,grid:{color:'rgba(0,0,0,.05)'}},x:{grid:{display:false}}}}
+      plugins:{legend:{position:'top',labels:{font:{size:9},boxWidth:8}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(1)+'%'}}},
+      scales:{y:{ticks:{callback:v=>v+'%',font:{size:9}},grid:{color:'rgba(0,0,0,.05)'}},x:{ticks:{font:{size:9}},grid:{display:false}}}}
   });
 
   // ── Gráfico 4: % MC ───────────────────────────────────────
   destroyChart('mc');
   const ctx4=document.getElementById('graf-mc').getContext('2d');
-  const mcReal=anualCols.filter(c=>PD[c]?._t==='real').map(c=>+(PD[c]?.mc_p||0)*100);
+  const mcReal=csvRealCols.map(c=>+(PD[c]?.mc_p||0)*100);
   _charts['mc']=new Chart(ctx4,{
     type:'line',
     data:{labels:csvLbls,datasets:[
-      {label:'% MC',data:mcReal,borderColor:C.green,backgroundColor:C.greenA,tension:.3,fill:true,pointRadius:4},
+      {label:'% MC',data:mcReal,borderColor:C.green,backgroundColor:C.greenA,tension:.3,fill:true,pointRadius:3},
       {label:'Meta 20%',data:csvLbls.map(()=>20),borderColor:C.gold,borderDash:[5,5],pointRadius:0,borderWidth:1.5}
     ]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(1)+'%'}}},
-      scales:{y:{ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,.05)'}},x:{grid:{display:false}}}}
+      plugins:{legend:{position:'top',labels:{font:{size:9},boxWidth:8}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(1)+'%'}}},
+      scales:{y:{ticks:{callback:v=>v+'%',font:{size:9}},grid:{color:'rgba(0,0,0,.05)'}},x:{ticks:{font:{size:9}},grid:{display:false}}}}
   });
 
   // ── Gráfico 5: % EBITDA ───────────────────────────────────
   destroyChart('ebt');
   const ctx5=document.getElementById('graf-ebt').getContext('2d');
-  const ebtReal=anualCols.filter(c=>PD[c]?._t==='real').map(c=>+(PD[c]?.ebt_p||0)*100);
+  const ebtReal=csvRealCols.map(c=>+(PD[c]?.ebt_p||0)*100);
   _charts['ebt']=new Chart(ctx5,{
     type:'line',
     data:{labels:csvLbls,datasets:[
-      {label:'% EBITDA',data:ebtReal,borderColor:C.gold,backgroundColor:C.goldA,tension:.3,fill:true,pointRadius:4},
+      {label:'% EBITDA',data:ebtReal,borderColor:C.gold,backgroundColor:C.goldA,tension:.3,fill:true,pointRadius:3},
       {label:'Meta 12%',data:csvLbls.map(()=>12),borderColor:C.gray,borderDash:[5,5],pointRadius:0,borderWidth:1.5}
     ]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(1)+'%'}}},
-      scales:{y:{ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,.05)'}},x:{grid:{display:false}}}}
+      plugins:{legend:{position:'top',labels:{font:{size:9},boxWidth:8}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(1)+'%'}}},
+      scales:{y:{ticks:{callback:v=>v+'%',font:{size:9}},grid:{color:'rgba(0,0,0,.05)'}},x:{ticks:{font:{size:9}},grid:{display:false}}}}
   });
 }
 
@@ -2580,18 +2602,27 @@ function buildDashboard(per){
   destroyDashChart('bar');
   const ctx1=document.getElementById('dash-bar')?.getContext('2d');
   if(ctx1){
+    // Só colunas anuais visíveis (sem mensais)
     const dashCols=getOrderedCols().filter(p=>!HC.includes(p)&&PD[p]&&!PD[p]._month);
-    const labels=dashCols.map(c=>c.replace('Ano ','').replace(' PE Plano','P').replace('PLANO ','P').replace('Nova Meta G4','Meta G4').replace('Plano ','P'));
+    const labels=dashCols.map(c=>c.replace('Ano ','').replace(' PE Plano','P').replace('PLANO ','P').replace('Nova Meta G4','Meta').replace('Plano ','P').replace('Acum ',''));
     _dashCharts['bar']=new Chart(ctx1,{
       type:'bar',
       data:{labels,datasets:[
-        {label:'Faturamento',data:dashCols.map(c=>+(PD[c]?.fat||0)/1e6),backgroundColor:'rgba(139,26,34,.7)',borderRadius:3},
-        {label:'Receita Líquida',data:dashCols.map(c=>+(PD[c]?.rl||0)/1e6),backgroundColor:'rgba(201,162,39,.7)',borderRadius:3},
-        {label:'EBITDA',data:dashCols.map(c=>+(PD[c]?.ebt||0)/1e6),backgroundColor:'rgba(46,125,50,.7)',borderRadius:3},
+        {label:'Fat.',data:dashCols.map(c=>+(PD[c]?.fat||0)/1e6),backgroundColor:'rgba(139,26,34,.8)',borderRadius:2},
+        {label:'RL',data:dashCols.map(c=>+(PD[c]?.rl||0)/1e6),backgroundColor:'rgba(201,162,39,.8)',borderRadius:2},
+        {label:'EBITDA',data:dashCols.map(c=>+(PD[c]?.ebt||0)/1e6),backgroundColor:'rgba(46,125,50,.8)',borderRadius:2},
       ]},
-      options:{responsive:true,maintainAspectRatio:false,
-        plugins:{tooltip:{callbacks:{label:c=>c.dataset.label+': R$ '+c.raw.toFixed(2)+'M'}}},
-        scales:{y:{ticks:{callback:v=>'R$'+v+'M'},grid:{color:'rgba(0,0,0,.05)'}},x:{grid:{display:false}}}}
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{position:'top',labels:{font:{size:10},boxWidth:10}},
+          tooltip:{callbacks:{label:c=>c.dataset.label+': R$'+c.raw.toFixed(1)+'M'}}
+        },
+        scales:{
+          y:{ticks:{callback:v=>'R$'+v+'M',font:{size:9}},grid:{color:'rgba(0,0,0,.05)'}},
+          x:{ticks:{font:{size:9},maxRotation:45},grid:{display:false}}
+        }
+      }
     });
   }
 
