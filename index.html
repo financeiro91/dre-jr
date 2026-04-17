@@ -426,7 +426,12 @@ tbody tr:last-child td{border-bottom:none;}
 #toast.err{border-left-color:var(--neg);}
 
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.semcard{
+.progress-card{background:var(--jr-white);border:1px solid var(--jr-gelo3);border-radius:3px;padding:14px 16px;}
+.progress-title{font-size:.78rem;font-weight:600;color:var(--jr-dark);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;}
+.progress-bar-bg{background:var(--jr-gelo2);border-radius:10px;height:10px;overflow:hidden;margin-bottom:4px;}
+.progress-bar-fill{height:100%;border-radius:10px;transition:width .6s ease;}
+.progress-vals{font-size:.68rem;color:var(--jr-gray);display:flex;justify-content:space-between;}
+.lsucc{background:#e8f5e9;color:#2E7D32;border-radius:4px;padding:8px 12px;font-size:.8rem;margin-top:8px;display:none;}
   background:var(--jr-white);border:1px solid var(--jr-gelo3);border-radius:3px;
   padding:14px 16px;display:flex;align-items:center;gap:12px;
 }
@@ -601,7 +606,17 @@ tbody tr:last-child td{border-bottom:none;}
       <div class="phdr" style="margin-bottom:12px">
         <div class="ptitle" style="font-size:1rem">Semáforo de Metas<small>Status em relação às metas definidas</small></div>
       </div>
-      <div id="dash-semaforo" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px"></div>
+      <div id="dash-semaforo" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:20px"></div>
+
+      <!-- Meta vs Realizado -->
+      <div class="phdr" style="margin-bottom:12px">
+        <div class="ptitle" style="font-size:1rem">Meta vs Realizado 2026<small>Progresso acumulado em relação às metas anuais</small></div>
+        <div class="phdr-actions">
+          <button class="tbtn" onclick="sendWeeklyReport()" title="Enviar relatório semanal por e-mail">📧 Enviar Relatório</button>
+          <button class="tbtn" onclick="exportDashboardPDF()" title="Gerar PDF executivo">📄 Exportar PDF</button>
+        </div>
+      </div>
+      <div id="dash-progresso" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px"></div>
     </div>
 
     <!-- DRE -->
@@ -2702,6 +2717,8 @@ function buildDashboard(per){
       </div>
     </div>`;
   }).join('');
+  // Build Meta vs Realizado progress bars
+  buildProgressoBars(d);
 }
 
 // Update showPanel to include forgot panel
@@ -2963,6 +2980,246 @@ loadFCFromSupabase().then(()=>{
   const tab=document.getElementById('t-fc');
   if(tab&&tab.style.display!=='none')buildFC();
 });
+
+// ══════════════════════════════════════════════════════════════
+// 5 — META VS REALIZADO COM BARRA DE PROGRESSO
+// ══════════════════════════════════════════════════════════════
+function buildProgressoBars(d){
+  const el=document.getElementById('dash-progresso');
+  if(!el)return;
+
+  const plano=PD['PLANO 2026']||{};
+  const acumReal=PD['Acum 2026 Real']||{};
+  const metaAnual=PD['Nova Meta G4']||{};
+
+  const indicadores=[
+    {nome:'Faturamento',real:+acumReal.fat||0,plano:+plano.fat||0,meta:+metaAnual.fat||0,fmt:v=>'R$ '+(v/1e6).toFixed(2)+'M'},
+    {nome:'Receita Líquida',real:+acumReal.rl||0,plano:+plano.rl||0,meta:+metaAnual.rl||0,fmt:v=>'R$ '+(v/1e6).toFixed(2)+'M'},
+    {nome:'Margem Contribuição',real:+(acumReal.mc_p||0)*100,plano:+(plano.mc_p||0)*100,meta:14.9,fmt:v=>v.toFixed(1)+'%'},
+    {nome:'EBITDA',real:+(acumReal.ebt_p||0)*100,plano:+(plano.ebt_p||0)*100,meta:6,fmt:v=>v.toFixed(1)+'%'},
+    {nome:'% CSV',real:+(acumReal.csv_p||0)*100,plano:+(plano.csv_p||0)*100,meta:72,fmt:v=>v.toFixed(1)+'%',inverso:true},
+    {nome:'Resultado Líquido',real:+acumReal.rliq||0,plano:+plano.rliq||0,meta:+metaAnual.rliq||0,fmt:v=>'R$ '+(v/1e3).toFixed(0)+'k'},
+  ];
+
+  el.innerHTML=indicadores.map(ind=>{
+    const meta=ind.meta||ind.plano||1;
+    const pct=meta?Math.min(Math.abs(ind.real/meta)*100,100):0;
+    const ok=ind.inverso?(ind.real<=meta):(ind.real>=meta*0.85);
+    const cor=ind.inverso
+      ?(ind.real<=meta?'#4CAF50':ind.real<=meta*1.15?'#FFC107':'#F44336')
+      :(ind.real>=meta?'#4CAF50':ind.real>=meta*0.85?'#FFC107':'#F44336');
+    return`<div class="progress-card">
+      <div class="progress-title">
+        <span>${ind.nome}</span>
+        <span style="font-family:'Roboto Mono',monospace;font-size:.72rem;color:${cor}">${ind.fmt(ind.real)}</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" style="width:${pct.toFixed(1)}%;background:${cor}"></div>
+      </div>
+      <div class="progress-vals">
+        <span>Realizado: <strong>${ind.fmt(ind.real)}</strong></span>
+        <span>Meta: ${ind.fmt(meta)} (${pct.toFixed(0)}%)</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// 4 — EXPORTAR PDF EXECUTIVO
+// ══════════════════════════════════════════════════════════════
+function exportDashboardPDF(){
+  const per=document.getElementById('dash-per-sel')?.value||activePer;
+  const d=PD[per];if(!d){toast('Selecione um período','error');return;}
+  const plano=PD['PLANO 2026']||{};
+  const acumReal=PD['Acum 2026 Real']||{};
+  const data=new Date().toLocaleDateString('pt-BR');
+
+  const html=`<!DOCTYPE html><html lang="pt-BR">
+<head><meta charset="UTF-8">
+<style>
+  body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#2C2C2C;font-size:11px;}
+  .header{background:#8B1A22;color:white;padding:16px 20px;border-radius:4px;margin-bottom:16px;display:flex;align-items:center;gap:16px;}
+  .header h1{margin:0;font-size:16px;letter-spacing:.05em;}
+  .header p{margin:0;font-size:9px;opacity:.8;}
+  .section{margin-bottom:14px;}
+  .section-title{font-size:11px;font-weight:bold;color:#8B1A22;border-bottom:1px solid #8B1A22;padding-bottom:3px;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;}
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .kpi{background:#f5f3ef;border-radius:3px;padding:8px;text-align:center;}
+  .kpi-val{font-size:15px;font-weight:bold;color:#8B1A22;}
+  .kpi-lbl{font-size:8px;color:#666;margin-top:2px;text-transform:uppercase;}
+  .kpi-sub{font-size:8px;color:#999;}
+  table{width:100%;border-collapse:collapse;font-size:9px;}
+  th{background:#8B1A22;color:white;padding:4px 6px;text-align:left;}
+  td{padding:3px 6px;border-bottom:1px solid #eee;}
+  tr:nth-child(even){background:#fafafa;}
+  .pos{color:#2E7D32;font-weight:bold;} .neg{color:#C62828;font-weight:bold;}
+  .prog-bg{background:#eee;border-radius:4px;height:6px;margin-top:3px;}
+  .prog-fill{height:100%;border-radius:4px;}
+  .meta-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+  .meta-card{background:#f5f3ef;border-radius:3px;padding:6px 8px;}
+  .meta-nm{font-size:8px;color:#666;} .meta-val{font-size:11px;font-weight:bold;}
+  .footer{text-align:center;font-size:8px;color:#999;margin-top:20px;border-top:1px solid #eee;padding-top:8px;}
+  .badge-green{background:#e8f5e9;color:#2E7D32;padding:1px 5px;border-radius:8px;font-size:8px;}
+  .badge-red{background:#ffebee;color:#C62828;padding:1px 5px;border-radius:8px;font-size:8px;}
+  .badge-yellow{background:#fff8e1;color:#F57F17;padding:1px 5px;border-radius:8px;font-size:8px;}
+</style>
+</head><body>
+<div class="header">
+  <div>
+    <h1>📊 RELATÓRIO EXECUTIVO — DRE</h1>
+    <p>JR Santa Fé Pavimentação e Construções Ltda · CNPJ: 65.472.078/0001-54</p>
+    <p>Período: ${per} · Gerado em: ${data}</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Principais Indicadores — ${per}</div>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-val">R$ ${(+d.fat/1e6).toFixed(2)}M</div><div class="kpi-lbl">Faturamento</div></div>
+    <div class="kpi"><div class="kpi-val">R$ ${(+d.rl/1e6).toFixed(2)}M</div><div class="kpi-lbl">Receita Líquida</div><div class="kpi-sub">${fmtP(d.rl_p)}</div></div>
+    <div class="kpi"><div class="kpi-val ${+d.mc_p>=0.149?'pos':'neg'}">${fmtP(d.mc_p)}</div><div class="kpi-lbl">Margem Contribuição</div></div>
+    <div class="kpi"><div class="kpi-val ${+d.ebt_p>=0.06?'pos':'neg'}">${fmtP(d.ebt_p)}</div><div class="kpi-lbl">EBITDA</div></div>
+    <div class="kpi"><div class="kpi-val ${+d.csv_p<=0.72?'pos':'neg'}">${fmtP(d.csv_p)}</div><div class="kpi-lbl">% CSV</div></div>
+    <div class="kpi"><div class="kpi-val ${+d.rliq>=0?'pos':'neg'}">R$ ${(+d.rliq/1e3).toFixed(0)}k</div><div class="kpi-lbl">Resultado Líquido</div></div>
+    <div class="kpi"><div class="kpi-val ${+d.fc>=0?'pos':'neg'}">R$ ${(+d.fc/1e3).toFixed(0)}k</div><div class="kpi-lbl">Fluxo de Caixa</div></div>
+    <div class="kpi"><div class="kpi-val">${fmtP(d.imp_p)}</div><div class="kpi-lbl">% Impostos</div></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Meta vs Realizado 2026 (Acumulado)</div>
+  <div class="meta-grid">
+    ${[
+      {n:'Faturamento',r:+acumReal.fat||0,m:+plano.fat||1,f:v=>'R$'+(v/1e6).toFixed(2)+'M'},
+      {n:'Receita Líquida',r:+acumReal.rl||0,m:+plano.rl||1,f:v=>'R$'+(v/1e6).toFixed(2)+'M'},
+      {n:'% MC',r:(+acumReal.mc_p||0)*100,m:14.9,f:v=>v.toFixed(1)+'%'},
+      {n:'% EBITDA',r:(+acumReal.ebt_p||0)*100,m:6,f:v=>v.toFixed(1)+'%'},
+      {n:'% CSV',r:(+acumReal.csv_p||0)*100,m:72,f:v=>v.toFixed(1)+'%',inv:true},
+      {n:'Resultado Líq.',r:+acumReal.rliq||0,m:+plano.rliq||1,f:v=>'R$'+(v/1e3).toFixed(0)+'k'},
+    ].map(ind=>{
+      const pct=Math.min(Math.abs(ind.r/(ind.m||1))*100,100);
+      const ok=ind.inv?(ind.r<=ind.m):(ind.r>=ind.m*0.85);
+      const cor=ind.inv?(ind.r<=ind.m?'#4CAF50':ind.r<=ind.m*1.15?'#FFC107':'#F44336'):(ind.r>=ind.m?'#4CAF50':ind.r>=ind.m*0.85?'#FFC107':'#F44336');
+      return`<div class="meta-card">
+        <div class="meta-nm">${ind.n}</div>
+        <div class="meta-val" style="color:${cor}">${ind.f(ind.r)}</div>
+        <div class="prog-bg"><div class="prog-fill" style="width:${pct.toFixed(0)}%;background:${cor}"></div></div>
+        <div style="font-size:8px;color:#999">Meta: ${ind.f(ind.m)} · ${pct.toFixed(0)}%</div>
+      </div>`;
+    }).join('')}
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Evolução DRE — Colunas Reais</div>
+  <table>
+    <thead><tr><th>Indicador</th>${Object.keys(PD).filter(c=>PD[c]._t==='real'&&!PD[c]._month).map(c=>`<th>${c.replace('Ano ','').replace(' Real','')}</th>`).join('')}<th>Acum 2026</th></tr></thead>
+    <tbody>
+      ${[
+        {l:'Faturamento',k:'fat',fmt:v=>'R$'+(v/1e6).toFixed(2)+'M'},
+        {l:'Receita Líquida',k:'rl',fmt:v=>'R$'+(v/1e6).toFixed(2)+'M'},
+        {l:'% CSV',k:'csv_p',fmt:v=>fmtP(v)},
+        {l:'Margem Contrib.',k:'mc_p',fmt:v=>fmtP(v)},
+        {l:'EBITDA',k:'ebt_p',fmt:v=>fmtP(v)},
+        {l:'Resultado Líq.',k:'rliq',fmt:v=>'R$'+(v/1e3).toFixed(0)+'k'},
+      ].map(row=>{
+        const realCols=Object.keys(PD).filter(c=>PD[c]._t==='real'&&!PD[c]._month);
+        const cells=realCols.map(c=>`<td>${row.fmt(+PD[c][row.k]||0)}</td>`).join('');
+        const acum=row.fmt(+acumReal[row.k]||0);
+        return`<tr><td><strong>${row.l}</strong></td>${cells}<td><strong>${acum}</strong></td></tr>`;
+      }).join('')}
+    </tbody>
+  </table>
+</div>
+
+<div class="footer">
+  Relatório gerado pelo Sistema DRE JR · ${data} · dre-jr.vercel.app
+</div>
+</body></html>`;
+
+  const blob=new Blob([html],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const w=window.open(url,'_blank');
+  setTimeout(()=>{w?.print();},800);
+  toast('PDF gerado! Use Ctrl+P para salvar como PDF.');
+}
+
+// ══════════════════════════════════════════════════════════════
+// 6 — RELATÓRIO SEMANAL POR E-MAIL
+// ══════════════════════════════════════════════════════════════
+async function sendWeeklyReport(){
+  const per=document.getElementById('dash-per-sel')?.value||activePer;
+  const d=PD[per];if(!d){toast('Selecione um período','error');return;}
+  const acumReal=PD['Acum 2026 Real']||{};
+
+  toast('Enviando relatório...');
+  const params={
+    nome_solicitante:'Sistema DRE JR (Automático)',
+    usuario:'relatório-semanal',
+    data_hora:new Date().toLocaleString('pt-BR'),
+    tipo_solicitacao:'RELATÓRIO SEMANAL — '+per+'\n\n'+
+      '📊 INDICADORES '+per+':\n'+
+      '• Faturamento: R$ '+(+d.fat/1e6).toFixed(2)+'M\n'+
+      '• Receita Líquida: R$ '+(+d.rl/1e6).toFixed(2)+'M | '+fmtP(d.rl_p)+'\n'+
+      '• % CSV: '+fmtP(d.csv_p)+' (Meta ≤72%)\n'+
+      '• Margem Contribuição: '+fmtP(d.mc_p)+' (Meta ≥14,9%)\n'+
+      '• EBITDA: '+fmtP(d.ebt_p)+' (Meta ≥6%)\n'+
+      '• Resultado Líquido: R$ '+(+d.rliq/1e3).toFixed(0)+'k\n'+
+      '• Saldo FC: R$ '+(+d.fc/1e3).toFixed(0)+'k\n\n'+
+      '📈 ACUMULADO 2026:\n'+
+      '• Faturamento: R$ '+(+acumReal.fat/1e6).toFixed(2)+'M\n'+
+      '• Margem Contribuição: '+fmtP(acumReal.mc_p)+'\n'+
+      '• EBITDA: '+fmtP(acumReal.ebt_p)+'\n\n'+
+      'Acesse: https://dre-jr.vercel.app'
+  };
+  try{
+    if(typeof emailjs!=='undefined')
+      await emailjs.send(EMAILJS_SERVICE,EMAILJS_TEMPLATE,params);
+    toast('✅ Relatório enviado para financeiro@jrsantafe.com.br!');
+    pushH({type:'export',user:CU.label,ts:ts(),icon:'📧',descricao:'Relatório semanal enviado por e-mail'});
+  }catch(e){
+    toast('Erro ao enviar e-mail','error');
+    console.warn('weekly report err:',e);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// 7 — BACKUP AUTOMÁTICO DIÁRIO
+// ══════════════════════════════════════════════════════════════
+async function autoBackup(){
+  const today=new Date().toISOString().slice(0,10);
+  const lastBackup=localStorage.getItem('jr_last_backup');
+  if(lastBackup===today)return; // Already backed up today
+
+  try{
+    const snap={
+      label:`Auto-backup ${today}`,
+      ts:ts(),
+      data:JSON.parse(JSON.stringify(SE)),
+      custom:JSON.parse(JSON.stringify(SX))
+    };
+    // Save to Supabase backup table
+    await sbFetch('historico',{
+      method:'POST',
+      body:JSON.stringify({
+        tipo:'backup',
+        usuario:'sistema',
+        descricao:{...snap,icon:'💾',type:'backup'}
+      })
+    });
+    // Also save locally
+    DRE_VERSIONS.push(snap);
+    if(DRE_VERSIONS.length>MAX_VERSIONS)DRE_VERSIONS=DRE_VERSIONS.slice(-MAX_VERSIONS);
+    localStorage.setItem('jr4_versions',JSON.stringify(DRE_VERSIONS));
+    localStorage.setItem('jr_last_backup',today);
+    console.log(`✅ Auto-backup realizado: ${today}`);
+  }catch(e){
+    console.warn('Auto-backup error:',e);
+  }
+}
+
+// Run auto-backup on login (after data loads)
+setTimeout(autoBackup, 5000);
 
 function promptSaveVersion(){
   const label=prompt('Nome para esta versão (ex: "Fechamento Fev/26"):');
