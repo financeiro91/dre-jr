@@ -6,11 +6,14 @@
 <title>JR Pavimentação — DRE 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Open+Sans:wght@400;500;600&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
   // EmailJS — configure com seus IDs em https://www.emailjs.com
   // Service ID e Template ID são criados na conta EmailJS gratuita
   const EMAILJS_SERVICE  = 'service_jrdre';
-  const EMAILJS_TEMPLATE = 'template_hulk0u9';
+  const EMAILJS_TEMPLATE = 'template_hulk0u9';   // solicitação de cadastro
+  const EMAILJS_TEMPLATE_APROV = 'template_zdoto7a'; // aprovação (criar no EmailJS)
   const EMAILJS_PUBLIC   = 'Wkdv_gdFdh5YCp9ix';
   (function(){try{emailjs.init({publicKey:EMAILJS_PUBLIC});}catch(e){}})();
 </script>
@@ -257,7 +260,7 @@ thead th:first-child{
 thead th.th-plan{background:#1a1500;border-bottom-color:var(--jr-gold3);color:#c8a940;}
 thead th.th-real{background:#1a0304;border-bottom-color:#7d2a2a;color:#c07070;}
 thead th.th-meta{background:#131000;border-bottom-color:#7a6018;color:#b09830;}
-thead th.th-acum{background:#001208;border-bottom-color:#2E7D32;color:#5EAD62;}
+thead th.th-comp{background:#0d1a0d;border-bottom-color:#2E7D32;color:#5EAD62;font-size:.65rem;min-width:70px;}
 
 /* TD */
 tbody td{
@@ -422,6 +425,23 @@ tbody tr:last-child td{border-bottom:none;}
 #toast.show{transform:translateY(0);opacity:1;}
 #toast.err{border-left-color:var(--neg);}
 
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.semcard{
+  background:var(--jr-white);border:1px solid var(--jr-gelo3);border-radius:3px;
+  padding:14px 16px;display:flex;align-items:center;gap:12px;
+}
+.semled{width:14px;height:14px;border-radius:50%;flex-shrink:0;}
+.semled.verde{background:#4CAF50;box-shadow:0 0 6px rgba(76,175,80,.5);}
+.semled.amarelo{background:#FFC107;box-shadow:0 0 6px rgba(255,193,7,.5);}
+.semled.vermelho{background:#F44336;box-shadow:0 0 6px rgba(244,67,54,.5);}
+.seminfo{flex:1;}
+.semtitle{font-size:0.78rem;font-weight:600;color:var(--jr-dark);margin-bottom:2px;}
+.semval{font-family:'Roboto Mono',monospace;font-size:0.72rem;color:var(--jr-gray);}
+/* Comparativo % */
+.comp-pos{color:var(--pos);font-size:0.68rem;font-weight:700;}
+.comp-neg{color:var(--neg);font-size:0.68rem;font-weight:700;}
+.comp-neu{color:var(--jr-gray2);font-size:0.68rem;}
+
 @media(max-width:640px){.kgrid{grid-template-columns:1fr 1fr;}.lcard{width:94vw;padding:30px 20px;}.carea{padding:12px 10px;}}
 </style>
 </head>
@@ -446,6 +466,23 @@ tbody tr:last-child td{border-bottom:none;}
     <button class="lbtn" onclick="doLogin()">Entrar no Sistema</button>
     <div class="lerr" id="lerr">Usuário ou senha inválidos.</div>
     <div class="llink">Não tem acesso? <a onclick="showPanel('panel-register')">Criar cadastro</a></div>
+    <div class="llink" style="margin-top:6px"><a onclick="showPanel('panel-forgot')" style="color:var(--jr-gray);font-size:0.72rem">Esqueci minha senha</a></div>
+  </div>
+
+  <!-- FORGOT PASSWORD PANEL -->
+  <div class="lcard" id="panel-forgot" style="display:none">
+    <div class="llogo">
+      <div class="llogo-icon" style="background:var(--jr-dark2)"><span style="font-size:1.8rem">🔑</span></div>
+      <div class="lbrand">Recuperar Senha</div>
+      <div class="lsub">JR Sistema Financeiro</div>
+      <div class="lbar"></div>
+    </div>
+    <p style="font-size:0.82rem;color:var(--jr-gray);margin-bottom:16px;text-align:center">Informe seu usuário e enviaremos um e-mail ao administrador para redefinir sua senha.</p>
+    <div class="fg"><label>Usuário</label><input type="text" id="fp-user" placeholder="seu.usuario"></div>
+    <button class="lbtn" onclick="doForgotPassword()">Solicitar Redefinição</button>
+    <div class="lerr" id="fp-err" style="display:none"></div>
+    <div class="lsucc" id="fp-ok" style="display:none"></div>
+    <div class="llink"><a onclick="showPanel('panel-login')">← Voltar ao login</a></div>
   </div>
 
   <!-- REGISTER PANEL -->
@@ -457,6 +494,7 @@ tbody tr:last-child td{border-bottom:none;}
       <div class="lbar"></div>
     </div>
     <div class="fg"><label>Nome completo</label><input type="text" id="rg-nome" placeholder="Ex: João da Silva"></div>
+    <div class="fg"><label>E-mail</label><input type="email" id="rg-email" placeholder="seuemail@empresa.com.br"></div>
     <div class="fg"><label>Usuário (sem espaços)</label><input type="text" id="rg-user" placeholder="joaosilva" oninput="this.value=this.value.toLowerCase().replace(/\s/g,'')"></div>
     <div class="fg" style="position:relative">
       <label>Senha</label>
@@ -511,15 +549,22 @@ tbody tr:last-child td{border-bottom:none;}
         <button class="fsbtn" onclick="adjFont(1)">+</button>
       </div>
       <div class="ubadge"><div class="udot"></div><span id="curlbl">—</span></div>
-      <button class="bsm gold" onclick="exportCSV()">⬇ Exportar CSV</button>
+      <div class="ubadge" id="sync-badge" style="display:none;background:rgba(46,125,50,.3);border-color:rgba(46,125,50,.5)">
+        <div class="udot" style="background:#4CAF50;animation:pulse 1s infinite"></div>
+        <span style="font-size:.68rem">Ao vivo</span>
+      </div>
+      <button class="bsm gold" onclick="exportXLSX()">⬇ Excel</button>
+      <button class="bsm" style="background:rgba(255,255,255,.1)" onclick="exportCSV()">⬇ CSV</button>
       <button class="bsm" onclick="doLogout()">Sair</button>
     </div>
   </div>
 
   <div class="tabbar">
-    <div class="tab active" onclick="swTab(this,'t-dre')">DRE Principal</div>
+    <div class="tab active" onclick="swTab(this,'t-dash')">🏠 Dashboard</div>
+    <div class="tab" onclick="swTab(this,'t-dre')">DRE Principal</div>
     <div class="tab" onclick="swTab(this,'t-bal')">Balanço Patrimonial</div>
     <div class="tab" onclick="swTab(this,'t-plano')">Plano de Ação MASP</div>
+    <div class="tab" onclick="swTab(this,'t-graf')">📈 Gráficos</div>
     <div class="tab" onclick="swTab(this,'t-hist')">Histórico</div>
     <div class="tab" id="tab-pending" style="display:none" onclick="swTab(this,'t-pending')">
       Cadastros Pendentes <span id="pending-badge" style="background:var(--jr-red);color:#fff;border-radius:10px;padding:1px 7px;font-size:0.65rem;margin-left:4px;display:none"></span>
@@ -528,8 +573,36 @@ tbody tr:last-child td{border-bottom:none;}
 
   <div class="carea">
 
+    <!-- DASHBOARD -->
+    <div id="t-dash">
+      <div class="phdr">
+        <div class="ptitle">Dashboard Executivo<small>Visão geral dos principais indicadores — <span id="dash-periodo">Fev/26 Real</span></small></div>
+        <div class="phdr-actions">
+          <select class="sel" id="dash-per-sel" onchange="buildDashboard(this.value)"></select>
+        </div>
+      </div>
+      <!-- KPI Cards grandes -->
+      <div id="dash-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:24px"></div>
+      <!-- Charts row -->
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px">
+        <div class="kcard" style="padding:20px">
+          <div class="klbl">Faturamento vs Receita Líquida vs EBITDA — Período selecionado</div>
+          <canvas id="dash-bar" height="180"></canvas>
+        </div>
+        <div class="kcard" style="padding:20px">
+          <div class="klbl">Distribuição do Faturamento</div>
+          <canvas id="dash-donut" height="180"></canvas>
+        </div>
+      </div>
+      <!-- Semáforos metas -->
+      <div class="phdr" style="margin-bottom:12px">
+        <div class="ptitle" style="font-size:1rem">Semáforo de Metas<small>Status em relação às metas definidas</small></div>
+      </div>
+      <div id="dash-semaforo" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px"></div>
+    </div>
+
     <!-- DRE -->
-    <div id="t-dre">
+    <div id="t-dre" style="display:none">
       <div id="kpi-area" class="kgrid"></div>
       <div class="phdr">
         <div class="ptitle">Demonstração do Resultado do Exercício<small>JR Pavimentação e Construções — Santa Fé do Sul / SP</small></div>
@@ -537,6 +610,7 @@ tbody tr:last-child td{border-bottom:none;}
           <button class="btn-add" onclick="openNewMonth()">+ Novo Mês</button>
           <button class="btn-del" id="btn-del" style="display:none" onclick="delPer()">✕ Excluir coluna</button>
           <button class="tbtn" onclick="openAddRow('dre')">+ Linha</button>
+          <button class="tbtn" onclick="promptSaveVersion()" title="Salvar snapshot desta versão">📸 Salvar versão</button>
         </div>
       </div>
       <div class="period-row" id="per-btns"></div>
@@ -582,6 +656,50 @@ tbody tr:last-child td{border-bottom:none;}
       <div class="twrap"><table><thead id="plano-h"></thead><tbody id="plano-b"></tbody></table></div>
     </div>
 
+    <!-- GRÁFICOS -->
+    <div id="t-graf" style="display:none">
+      <div class="phdr">
+        <div class="ptitle">Gráficos e Evolução<small>Análise visual dos indicadores financeiros</small></div>
+        <div class="phdr-actions">
+          <select class="sel" id="graf-tipo" onchange="buildGraficos()">
+            <option value="fat">Faturamento Total</option>
+            <option value="rl">Receita Líquida</option>
+            <option value="mc">Margem de Contribuição</option>
+            <option value="mc_p">% Margem de Contribuição</option>
+            <option value="ebt">EBITDA</option>
+            <option value="ebt_p">% EBITDA</option>
+            <option value="csv_p">% CSV</option>
+            <option value="rliq">Resultado Líquido</option>
+            <option value="fc">Saldo Fluxo de Caixa</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <div class="kcard k-gold" style="padding:20px">
+          <div class="klbl">Indicador selecionado — Evolução Anual</div>
+          <canvas id="graf-anual" height="220"></canvas>
+        </div>
+        <div class="kcard k-red" style="padding:20px">
+          <div class="klbl">2026 — Mensal (Plano vs Real)</div>
+          <canvas id="graf-mensal" height="220"></canvas>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+        <div class="kcard" style="padding:20px">
+          <div class="klbl">% CSV Real — Evolução</div>
+          <canvas id="graf-csv" height="180"></canvas>
+        </div>
+        <div class="kcard" style="padding:20px">
+          <div class="klbl">% Margem de Contribuição — Evolução</div>
+          <canvas id="graf-mc" height="180"></canvas>
+        </div>
+        <div class="kcard" style="padding:20px">
+          <div class="klbl">% EBITDA — Evolução</div>
+          <canvas id="graf-ebt" height="180"></canvas>
+        </div>
+      </div>
+    </div>
+
     <!-- HISTÓRICO -->
     <div id="t-hist" style="display:none">
       <div class="phdr">
@@ -589,6 +707,10 @@ tbody tr:last-child td{border-bottom:none;}
         <div class="phdr-actions"><button class="tbtn" onclick="clearHist()">Limpar</button></div>
       </div>
       <div id="hlist" class="hlist"></div>
+      <div class="phdr" style="margin-top:24px">
+        <div class="ptitle" style="font-size:1rem">Versões Salvas do DRE<small>Snapshots para restauração</small></div>
+      </div>
+      <div id="versions-list" class="hlist"></div>
     </div>
 
     <!-- CADASTROS PENDENTES (admin only) -->
@@ -782,7 +904,7 @@ async function getPending(){
   try{
     const rows = await sbFetch('pendentes?select=*');
     const obj = {};
-    (rows||[]).forEach(r=>{ obj[r.username]={label:r.nome,pass:r.senha,ts:r.solicitado_em,status:'pending'}; });
+    (rows||[]).forEach(r=>{ obj[r.username]={label:r.nome,pass:r.senha,email:r.email||'',ts:r.solicitado_em,status:'pending'}; });
     return obj;
   }catch{ return JSON.parse(localStorage.getItem('jr4_pending')||'{}'); }
 }
@@ -790,14 +912,14 @@ async function savePending(obj){
   // savePending receives full object — used only for deletes (approve/reject handle their own)
   localStorage.setItem('jr4_pending', JSON.stringify(obj));
 }
-async function addPending(username, nome, senha){
+async function addPending(username, nome, senha, email=''){
   await sbFetch('pendentes', {
     method:'POST',
     prefer:'resolution=merge-duplicates',
-    body: JSON.stringify({username, nome, senha})
+    body: JSON.stringify({username, nome, senha, email})
   });
   const p = JSON.parse(localStorage.getItem('jr4_pending')||'{}');
-  p[username]={label:nome,pass:senha,ts:new Date().toLocaleString('pt-BR'),status:'pending'};
+  p[username]={label:nome,pass:senha,email,ts:new Date().toLocaleString('pt-BR'),status:'pending'};
   localStorage.setItem('jr4_pending', JSON.stringify(p));
 }
 async function deletePending(username){
@@ -861,13 +983,15 @@ async function doLogin(){
 
 async function doRegister(){
   const nome=document.getElementById('rg-nome').value.trim();
+  const email=document.getElementById('rg-email').value.trim().toLowerCase();
   const user=document.getElementById('rg-user').value.trim().toLowerCase();
   const pass=document.getElementById('rg-pass').value;
   const pass2=document.getElementById('rg-pass2').value;
   const err=document.getElementById('rg-err');
   const btn=document.getElementById('rg-submit-btn');
   err.style.display='none';
-  if(!nome||!user||!pass){err.textContent='Preencha todos os campos.';err.style.display='block';return;}
+  if(!nome||!email||!user||!pass){err.textContent='Preencha todos os campos.';err.style.display='block';return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){err.textContent='E-mail inválido.';err.style.display='block';return;}
   if(user.length<3){err.textContent='Usuário deve ter ao menos 3 caracteres.';err.style.display='block';return;}
   if(pass.length<6){err.textContent='Senha deve ter ao menos 6 caracteres.';err.style.display='block';return;}
   if(pass!==pass2){err.textContent='As senhas não coincidem.';err.style.display='block';return;}
@@ -887,20 +1011,19 @@ async function doRegister(){
     btn.disabled=false;btn.textContent='Solicitar Acesso';return;
   }
 
-  // Save as pending in Supabase
+  // Save as pending in Supabase (with email)
   try{
-    await addPending(user, nome, pass);
+    await addPending(user, nome, pass, email);
   }catch(e){
     console.warn('Supabase addPending error:',e);
-    // fallback: save locally
     const p=JSON.parse(localStorage.getItem('jr4_pending')||'{}');
-    p[user]={label:nome,pass,ts:new Date().toLocaleString('pt-BR'),status:'pending'};
+    p[user]={label:nome,pass,email,ts:new Date().toLocaleString('pt-BR'),status:'pending'};
     localStorage.setItem('jr4_pending',JSON.stringify(p));
   }
 
   btn.textContent='Enviando e-mail...';
 
-  // Send e-mail via EmailJS — params must match template variables exactly
+  // Send e-mail via EmailJS
   const params={
     nome_solicitante:nome,
     usuario:user,
@@ -911,7 +1034,6 @@ async function doRegister(){
     await emailjs.send(EMAILJS_SERVICE,EMAILJS_TEMPLATE,params);
   }catch(e){
     console.warn('EmailJS erro:',e);
-    // E-mail failed but pending saved — continue anyway
   }
 
   btn.disabled=false;btn.textContent='Solicitar Acesso';
@@ -944,7 +1066,7 @@ async function renderPendingTab(){
       <div class="pcard-info">
         <div class="pcard-name">${p.label}</div>
         <div class="pcard-meta">
-          Usuário: <span>${u}</span> &nbsp;|&nbsp; Solicitado em: <span>${p.ts}</span>
+          Usuário: <span>${u}</span> &nbsp;|&nbsp; E-mail: <span>${p.email||'—'}</span> &nbsp;|&nbsp; Solicitado em: <span>${p.ts}</span>
         </div>
       </div>
       <div class="pcard-actions">
@@ -1294,6 +1416,35 @@ async function loadHistoryFromSupabase(){
   }catch(e){console.warn('loadHistory error:',e);}
 }
 
+// Load Balanço edits from Supabase
+async function loadBalFromSupabase(){
+  try{
+    const rows=await sbFetch('balanco_dados?select=*');
+    if(!rows||!rows.length)return;
+    const byId={};BAL_ROWS.forEach(r=>byId[r.id]=r);
+    rows.forEach(({row_id,col_idx,valor})=>{
+      const r=byId[row_id];
+      if(r&&r.t==='v') r.v[col_idx]=valor;
+    });
+  }catch(e){console.warn('loadBal error:',e);}
+}
+
+// Load Plano de Ação from Supabase
+async function loadPlanoFromSupabase(){
+  try{
+    const rows=await sbFetch('plano_acao?select=*&order=numero.asc');
+    if(!rows||!rows.length)return;
+    // Merge with default PLANO — update matching rows, add new ones
+    rows.forEach(r=>{
+      const idx=PLANO.findIndex(p=>p[0]===r.numero);
+      const row=[r.numero,r.acao,r.responsavel,r.inicio,r.termino,r.status,r.observacao];
+      if(idx>=0) PLANO[idx]=row;
+      else PLANO.push(row);
+    });
+    PLANO.sort((a,b)=>a[0]-b[0]);
+  }catch(e){console.warn('loadPlano error:',e);}
+}
+
 // ══ ACUM RECALC ══
 function recalcAcum(){
   // Real monthly columns → Acum 2026 Real
@@ -1337,20 +1488,33 @@ function toast(m,t=''){const el=document.getElementById('toast');el.textContent=
 function swTab(el,id){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
-  ['t-dre','t-bal','t-plano','t-hist','t-pending'].forEach(i=>document.getElementById(i).style.display=i===id?'block':'none');
+  ['t-dash','t-dre','t-bal','t-plano','t-graf','t-hist','t-pending'].forEach(i=>{
+    const el2=document.getElementById(i);if(el2)el2.style.display=i===id?'block':'none';
+  });
   if(id==='t-hist')renderHist();
   if(id==='t-pending')renderPendingTab();
+  if(id==='t-graf')buildGraficos();
+  if(id==='t-dash')buildDashboard();
 }
 
 // ══ INIT ══
 function init(){
   recalcAcum();buildPerBtns();buildKPI();buildDRE();buildBal();buildPlano(PLANO);
+  buildDashboard();
   // Show pending tab only for admins
   const tab=document.getElementById('tab-pending');
   if(tab) tab.style.display=CU?.role==='admin'?'':'none';
   updatePendingBadge();
-  // Load latest edits from Supabase in background
-  loadDREFromSupabase().then(()=>{buildKPI();buildDRE();});
+  // Load all data from Supabase in background
+  Promise.all([
+    loadDREFromSupabase(),
+    loadBalFromSupabase(),
+    loadPlanoFromSupabase()
+  ]).then(()=>{
+    buildKPI();buildDRE();buildBal();buildPlano(PLANO);buildDashboard();
+  });
+  // Start realtime sync
+  startRealtime();
 }
 
 // ══ PERIOD BUTTONS ══
@@ -1831,6 +1995,12 @@ function saveEditBal(ri,ci,inp){
   const old=r.v[ci];const nv=inp.value.trim();
   if(nv===old){buildBal();return;}
   r.v[ci]=nv;
+  // Save to Supabase
+  sbFetch('balanco_dados',{
+    method:'POST',
+    prefer:'resolution=merge-duplicates',
+    body:JSON.stringify({row_id:r.id,col_idx:ci,valor:nv})
+  }).catch(e=>console.warn('balanco save err:',e));
   pushH({type:"edit",user:CU.label,ts:ts(),icon:"✏️",period:"Balanço",lbl:r.lbl,oldV:old,newV:nv});
   buildBal();toast("Atualizado!");
 }
@@ -1973,6 +2143,16 @@ function savePlanoField(ri,ci,val){
   const old=PLANO[ri][ci];
   if(val===old||val===''&&old==='—'){buildPlano(PLANO);return;}
   PLANO[ri][ci]=val||'—';
+  // Save full row to Supabase
+  const r=PLANO[ri];
+  sbFetch('plano_acao',{
+    method:'POST',
+    prefer:'resolution=merge-duplicates',
+    body:JSON.stringify({
+      numero:r[0],acao:r[1],responsavel:r[2],
+      inicio:r[3],termino:r[4],status:r[5],observacao:r[6]
+    })
+  }).catch(e=>console.warn('plano save err:',e));
   pushH({type:'edit',user:CU.label,ts:ts(),icon:'✏️',period:'Plano MASP',lbl:String(PLANO[ri][1]).slice(0,50),oldV:String(old),newV:String(val)});
   buildPlano(PLANO);toast('Atualizado!');
 }
@@ -1994,23 +2174,155 @@ function startEditPlano(){}
 function confEditPlanoOld(){}
 function editPlanoStatus(ri,val){savePlanoField(ri,5,val);}
 
+// ══ GRÁFICOS ══════════════════════════════════════════════════
+const _charts={};
+function destroyChart(id){if(_charts[id]){_charts[id].destroy();delete _charts[id];}}
+
+function buildGraficos(){
+  const campo = document.getElementById('graf-tipo')?.value||'fat';
+  const isPct = campo.endsWith('_p');
+
+  // ── Cores JR ─────────────────────────────────────────────
+  const C={red:'#8B1A22',gold:'#C9A227',green:'#2E7D32',gray:'#9A9A9A',
+           redA:'rgba(139,26,34,.15)',goldA:'rgba(201,162,39,.15)',greenA:'rgba(46,125,50,.15)'};
+
+  // ── Dados anuais (colunas sem _month) ─────────────────────
+  const anualCols=['Plano 2022','Ano 2022','Ano 2023 PE Plano','Ano 2023 Real',
+                   'Ano 2024','Ano 2025 PE Plano','Ano 2025 Real','PLANO 2026','Nova Meta G4'];
+  const anualLabels=anualCols.map(c=>c.replace('Ano ','').replace('PE Plano','P').replace('PLANO ','P').replace('Nova Meta G4','Meta G4'));
+  const anualVals=anualCols.map(c=>+PD[c]?.[campo]||0);
+  const anualColors=anualCols.map(c=>PD[c]?._t==='plan'||PD[c]?._t==='meta'?C.gold:C.red);
+
+  // ── Dados mensais 2026 ────────────────────────────────────
+  const mensalCols=Object.keys(PD).filter(k=>PD[k]._month);
+  const mensalLabels=mensalCols.map(k=>PD[k]._month+' '+(PD[k]._t==='real'?'Real':''));
+
+  // ── Formatador ────────────────────────────────────────────
+  const fmt=v=>isPct?(v*100).toFixed(1)+'%':
+    v>=1e6?(v/1e6).toFixed(2)+'M':v>=1e3?(v/1e3).toFixed(0)+'k':v.toFixed(0);
+
+  // ── Gráfico 1: Evolução anual ──────────────────────────────
+  destroyChart('anual');
+  const ctx1=document.getElementById('graf-anual').getContext('2d');
+  _charts['anual']=new Chart(ctx1,{
+    type:'bar',
+    data:{
+      labels:anualLabels,
+      datasets:[{
+        label:document.getElementById('graf-tipo').options[document.getElementById('graf-tipo').selectedIndex].text,
+        data:anualVals,
+        backgroundColor:anualColors,
+        borderColor:anualColors,
+        borderWidth:1,borderRadius:3
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)}}},
+      scales:{y:{ticks:{callback:v=>fmt(v)},grid:{color:'rgba(0,0,0,.05)'}},
+              x:{grid:{display:false}}}
+    }
+  });
+
+  // ── Gráfico 2: Mensal 2026 ────────────────────────────────
+  destroyChart('mensal');
+  const ctx2=document.getElementById('graf-mensal').getContext('2d');
+  const meses=[...new Set(mensalCols.map(k=>PD[k]._month))];
+  const planVals2026=meses.map(m=>{
+    const k=Object.keys(PD).find(k=>PD[k]._month===m&&PD[k]._t==='plan');
+    return k?+PD[k][campo]||0:null;
+  });
+  const realVals2026=meses.map(m=>{
+    const k=Object.keys(PD).find(k=>PD[k]._month===m&&PD[k]._t==='real');
+    return k?+PD[k][campo]||0:null;
+  });
+  _charts['mensal']=new Chart(ctx2,{
+    type:'bar',
+    data:{
+      labels:meses,
+      datasets:[
+        {label:'Plano',data:planVals2026,backgroundColor:C.goldA,borderColor:C.gold,borderWidth:2,borderRadius:3},
+        {label:'Real', data:realVals2026,backgroundColor:C.redA, borderColor:C.red, borderWidth:2,borderRadius:3}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}},
+      scales:{y:{ticks:{callback:v=>fmt(v)},grid:{color:'rgba(0,0,0,.05)'}},
+              x:{grid:{display:false}}}
+    }
+  });
+
+  // ── Gráfico 3: % CSV ──────────────────────────────────────
+  destroyChart('csv');
+  const ctx3=document.getElementById('graf-csv').getContext('2d');
+  const csvReal=anualCols.filter(c=>PD[c]?._t==='real').map(c=>+(PD[c]?.csv_p||0)*100);
+  const csvLbls=anualCols.filter(c=>PD[c]?._t==='real').map(c=>c.replace('Ano ','').replace(' Real',''));
+  _charts['csv']=new Chart(ctx3,{
+    type:'line',
+    data:{labels:csvLbls,datasets:[
+      {label:'% CSV',data:csvReal,borderColor:C.red,backgroundColor:C.redA,tension:.3,fill:true,pointRadius:4},
+      {label:'Meta 72%',data:csvLbls.map(()=>72),borderColor:C.gold,borderDash:[5,5],pointRadius:0,borderWidth:1.5}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(1)+'%'}}},
+      scales:{y:{ticks:{callback:v=>v+'%'},min:50,grid:{color:'rgba(0,0,0,.05)'}},x:{grid:{display:false}}}}
+  });
+
+  // ── Gráfico 4: % MC ───────────────────────────────────────
+  destroyChart('mc');
+  const ctx4=document.getElementById('graf-mc').getContext('2d');
+  const mcReal=anualCols.filter(c=>PD[c]?._t==='real').map(c=>+(PD[c]?.mc_p||0)*100);
+  _charts['mc']=new Chart(ctx4,{
+    type:'line',
+    data:{labels:csvLbls,datasets:[
+      {label:'% MC',data:mcReal,borderColor:C.green,backgroundColor:C.greenA,tension:.3,fill:true,pointRadius:4},
+      {label:'Meta 20%',data:csvLbls.map(()=>20),borderColor:C.gold,borderDash:[5,5],pointRadius:0,borderWidth:1.5}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(1)+'%'}}},
+      scales:{y:{ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,.05)'}},x:{grid:{display:false}}}}
+  });
+
+  // ── Gráfico 5: % EBITDA ───────────────────────────────────
+  destroyChart('ebt');
+  const ctx5=document.getElementById('graf-ebt').getContext('2d');
+  const ebtReal=anualCols.filter(c=>PD[c]?._t==='real').map(c=>+(PD[c]?.ebt_p||0)*100);
+  _charts['ebt']=new Chart(ctx5,{
+    type:'line',
+    data:{labels:csvLbls,datasets:[
+      {label:'% EBITDA',data:ebtReal,borderColor:C.gold,backgroundColor:C.goldA,tension:.3,fill:true,pointRadius:4},
+      {label:'Meta 12%',data:csvLbls.map(()=>12),borderColor:C.gray,borderDash:[5,5],pointRadius:0,borderWidth:1.5}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(1)+'%'}}},
+      scales:{y:{ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,.05)'}},x:{grid:{display:false}}}}
+  });
+}
+
 // ══ HISTORY ══
 async function renderHist(){
   await loadHistoryFromSupabase();
   const list=document.getElementById('hlist');
-  if(!AH.length){list.innerHTML='<div class="empty">Sem registros de alteração ainda.</div>';return;}
-  list.innerHTML=AH.map(h=>{
-    let body='';
-    if(h.type==='edit')body=`<div><strong>${h.user}</strong> editou <strong>${h.lbl}</strong> em <em>${h.period}</em></div><div class="hmeta"><span class="oldv">${h.oldV}</span> → <span class="newv">${h.newV}</span></div>`;
-    else if(h.type==='newcol')body=`<div><strong>${h.user}</strong> criou coluna <strong>"${h.col}"</strong> (base: ${h.from})</div>`;
-    else if(h.type==='newrow')body=`<div><strong>${h.user}</strong> adicionou linha <strong>"${h.row}"</strong> em ${h.tab}</div>`;
-    else if(h.type==='delcol')body=`<div><strong>${h.user}</strong> removeu coluna <strong>"${h.col}"</strong></div>`;
-    else if(h.type==='login')body=`<div><strong>${h.user}</strong> fez login</div>`;
-    else if(h.type==='logout')body=`<div><strong>${h.user}</strong> saiu do sistema</div>`;
-    else if(h.type==='approve')body=`<div><strong>${h.user}</strong> aprovou cadastro de <strong>${h.target}</strong> como <em>${h.role}</em></div>`;
-    else if(h.type==='reject')body=`<div><strong>${h.user}</strong> rejeitou cadastro de <strong>${h.target}</strong></div>`;
-    return`<div class="hitem"><div class="hico ${h.type}">${h.icon}</div><div class="hbody">${body}</div><div class="hts">${h.ts}</div></div>`;
-  }).join('');
+  if(!AH.length){list.innerHTML='<div class="empty">Sem registros de alteração ainda.</div>';}
+  else{
+    list.innerHTML=AH.map(h=>{
+      let body='';
+      if(h.type==='edit')body=`<div><strong>${h.user}</strong> editou <strong>${h.lbl}</strong> em <em>${h.period}</em></div><div class="hmeta"><span class="oldv">${h.oldV}</span> → <span class="newv">${h.newV}</span></div>`;
+      else if(h.type==='newcol')body=`<div><strong>${h.user}</strong> criou coluna <strong>"${h.col}"</strong> (base: ${h.from})</div>`;
+      else if(h.type==='newrow')body=`<div><strong>${h.user}</strong> adicionou linha <strong>"${h.row}"</strong> em ${h.tab}</div>`;
+      else if(h.type==='delcol')body=`<div><strong>${h.user}</strong> removeu coluna <strong>"${h.col}"</strong></div>`;
+      else if(h.type==='login')body=`<div><strong>${h.user}</strong> fez login</div>`;
+      else if(h.type==='logout')body=`<div><strong>${h.user}</strong> saiu do sistema</div>`;
+      else if(h.type==='approve')body=`<div><strong>${h.user}</strong> aprovou cadastro de <strong>${h.target}</strong> como <em>${h.role}</em></div>`;
+      else if(h.type==='reject')body=`<div><strong>${h.user}</strong> rejeitou cadastro de <strong>${h.target}</strong></div>`;
+      else if(h.type==='export')body=`<div><strong>${h.user}</strong> exportou o sistema para Excel</div>`;
+      else body=`<div>${h.icon||'•'} <strong>${h.user||''}</strong></div>`;
+      return`<div class="hitem"><div class="hico ${h.type||'edit'}">${h.icon||'•'}</div><div class="hbody">${body}</div><div class="hts">${h.ts||''}</div></div>`;
+    }).join('');
+  }
+  // Also render versions
+  renderVersions();
 }
 function clearHist(){if(!confirm('Limpar todo o histórico?'))return;AH=[];localStorage.setItem('jr4_h','[]');renderHist();toast('Histórico limpo.');}
 
@@ -2029,6 +2341,354 @@ function exportCSV(){
 
 // ══ MODALS ══
 function cM(id){document.getElementById(id).style.display='none';}
+
+// ══════════════════════════════════════════════════════════════
+// 2 — SENHA HASH (SHA-256 via WebCrypto — sem bcrypt no browser)
+// ══════════════════════════════════════════════════════════════
+async function hashSenha(senha){
+  try{
+    const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(senha));
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  }catch{return senha;} // fallback plain if crypto unavailable
+}
+// Comparar senha — suporta hash e plain (para usuários antigos)
+async function verificaSenha(input,stored){
+  if(!stored)return false;
+  if(stored.length===64){const h=await hashSenha(input);return h===stored;}
+  return input===stored; // plain text fallback
+}
+
+// ══════════════════════════════════════════════════════════════
+// 1 — SINCRONIZAÇÃO EM TEMPO REAL (polling Supabase a cada 30s)
+// ══════════════════════════════════════════════════════════════
+let _realtimeInterval=null;
+let _lastSync=null;
+function startRealtime(){
+  const badge=document.getElementById('sync-badge');
+  if(badge)badge.style.display='flex';
+  _realtimeInterval=setInterval(async()=>{
+    if(!CU)return;
+    try{
+      // Check if DRE data was updated since last sync
+      const ts_param=_lastSync?`&atualizado_em=gt.${_lastSync}`:'';
+      const rows=await sbFetch(`dre_dados?select=*${ts_param}&order=atualizado_em.desc&limit=1`);
+      if(rows&&rows.length>0){
+        await loadDREFromSupabase();
+        buildKPI();buildDRE();
+        const d=document.getElementById('t-dash');
+        if(d&&d.style.display!=='none')buildDashboard();
+      }
+      _lastSync=new Date().toISOString();
+    }catch{}
+  },30000); // every 30 seconds
+}
+function stopRealtime(){
+  if(_realtimeInterval){clearInterval(_realtimeInterval);_realtimeInterval=null;}
+  const badge=document.getElementById('sync-badge');
+  if(badge)badge.style.display='none';
+}
+
+// ══════════════════════════════════════════════════════════════
+// 7 — RECUPERAÇÃO DE SENHA
+// ══════════════════════════════════════════════════════════════
+async function doForgotPassword(){
+  const user=document.getElementById('fp-user').value.trim().toLowerCase();
+  const err=document.getElementById('fp-err');
+  const ok=document.getElementById('fp-ok');
+  err.style.display='none';ok.style.display='none';
+  if(!user){err.textContent='Informe seu usuário.';err.style.display='block';return;}
+  // Check if user exists
+  const allUsers=await getApprovedUsers();
+  const usr=Object.assign({},DEFAULT_USERS,allUsers)[user];
+  if(!usr){err.textContent=`Usuário "${user}" não encontrado.`;err.style.display='block';return;}
+  // Send email to admin
+  const params={
+    nome_solicitante:usr.label,
+    usuario:user,
+    data_hora:new Date().toLocaleString('pt-BR'),
+    tipo_solicitacao:'REDEFINIÇÃO DE SENHA',
+  };
+  try{
+    if(typeof emailjs!=='undefined')
+      await emailjs.send(EMAILJS_SERVICE,EMAILJS_TEMPLATE,params);
+  }catch{}
+  ok.textContent='Solicitação enviada! O administrador receberá um e-mail para redefinir sua senha.';
+  ok.style.display='block';
+  setTimeout(()=>showPanel('panel-login'),3000);
+}
+
+// ══════════════════════════════════════════════════════════════
+// 8 — E-MAIL DE CONFIRMAÇÃO QUANDO APROVADO
+// ══════════════════════════════════════════════════════════════
+async function sendApprovalEmail(nome, usuario, role, email_usuario){
+  const roleLabel={viewer:'Visualizador',editor:'Editor',admin:'Administrador'};
+  const params={
+    nome_solicitante:nome,
+    usuario:usuario,
+    nivel_acesso:roleLabel[role]||role,
+    data_hora:new Date().toLocaleString('pt-BR'),
+    link_sistema:'https://dre-jr.vercel.app',
+    email_usuario:email_usuario||'',
+  };
+  try{
+    if(typeof emailjs!=='undefined')
+      await emailjs.send(EMAILJS_SERVICE,EMAILJS_TEMPLATE_APROV,params);
+  }catch(e){console.warn('approval email err:',e);}
+}
+
+// ══════════════════════════════════════════════════════════════
+// 9 — HISTÓRICO DE VERSÕES DO DRE
+// ══════════════════════════════════════════════════════════════
+let DRE_VERSIONS=[];
+const MAX_VERSIONS=20;
+function snapshotDRE(label){
+  const snap={label,ts:ts(),data:JSON.parse(JSON.stringify(SE)),custom:JSON.parse(JSON.stringify(SX))};
+  DRE_VERSIONS.unshift(snap);
+  if(DRE_VERSIONS.length>MAX_VERSIONS)DRE_VERSIONS=DRE_VERSIONS.slice(0,MAX_VERSIONS);
+  localStorage.setItem('jr4_versions',JSON.stringify(DRE_VERSIONS));
+  toast(`Versão "${label}" salva!`);
+}
+function loadDREVersions(){
+  DRE_VERSIONS=JSON.parse(localStorage.getItem('jr4_versions')||'[]');
+}
+function restoreVersion(idx){
+  const v=DRE_VERSIONS[idx];
+  if(!v)return;
+  if(!confirm(`Restaurar versão "${v.label}" (${v.ts})?\n\nOs dados atuais serão substituídos.`))return;
+  Object.assign(SE,v.data);
+  Object.assign(SX,v.custom);
+  Object.keys(SE).forEach(p=>{if(PD[p])Object.assign(PD[p],SE[p]);});
+  Object.keys(SX).forEach(p=>{if(!PD[p]){PD[p]=SX[p];}});
+  save();saveX();recalcAcum();buildPerBtns();buildKPI();buildDRE();
+  toast(`Versão "${v.label}" restaurada!`);
+}
+function renderVersions(){
+  const list=document.getElementById('versions-list');
+  if(!list)return;
+  loadDREVersions();
+  if(!DRE_VERSIONS.length){list.innerHTML='<div class="empty">Nenhuma versão salva ainda.</div>';return;}
+  list.innerHTML=DRE_VERSIONS.map((v,i)=>`
+    <div class="hitem">
+      <div class="hico edit">📸</div>
+      <div class="hbody"><div><strong>${v.label}</strong></div><div class="hmeta">${v.ts}</div></div>
+      <button class="bghost" style="font-size:.75rem;padding:5px 10px" onclick="restoreVersion(${i})">↩ Restaurar</button>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// 6 — EXPORTAR XLSX FORMATADO
+// ══════════════════════════════════════════════════════════════
+function exportXLSX(){
+  if(typeof XLSX==='undefined'){toast('Carregando biblioteca...','error');return;}
+  const vis=getOrderedCols().filter(p=>!HC.includes(p));
+  const wb=XLSX.utils.book_new();
+
+  // ── DRE sheet ──────────────────────────────────────────────
+  const dreData=[['Indicador / Linha',...vis]];
+  DROWS.forEach(r=>{
+    if(r.type==='blank'){dreData.push([]);return;}
+    const vals=vis.map(p=>{
+      const v=PD[p][r.id];
+      if(v==null||v===''||isNaN(+v))return '';
+      return r.type==='percent'?+(v*100).toFixed(2):+v;
+    });
+    dreData.push([r.label,...vals]);
+  });
+  const wsDRE=XLSX.utils.aoa_to_sheet(dreData);
+  // Column widths
+  wsDRE['!cols']=[{wch:35},...vis.map(()=>({wch:16}))];
+  XLSX.utils.book_append_sheet(wb,wsDRE,'DRE Principal');
+
+  // ── Balanço sheet ──────────────────────────────────────────
+  const balData=[['Conta',...BAL_COLS.slice(1)]];
+  BAL_ROWS.forEach(r=>{
+    if(r.t==='blank'){balData.push([]);return;}
+    balData.push([r.lbl,...r.v]);
+  });
+  const wsBal=XLSX.utils.aoa_to_sheet(balData);
+  wsBal['!cols']=[{wch:40},...BAL_COLS.slice(1).map(()=>({wch:16}))];
+  XLSX.utils.book_append_sheet(wb,wsBal,'Balanço Patrimonial');
+
+  // ── Plano sheet ────────────────────────────────────────────
+  const planoData=[['Nº','Ação / Etapa','Responsável','Início','Término','Status','Observação']];
+  PLANO.forEach(r=>planoData.push(r));
+  const wsPlano=XLSX.utils.aoa_to_sheet(planoData);
+  wsPlano['!cols']=[{wch:5},{wch:60},{wch:18},{wch:12},{wch:12},{wch:16},{wch:40}];
+  XLSX.utils.book_append_sheet(wb,wsPlano,'Plano de Ação MASP');
+
+  // Download
+  XLSX.writeFile(wb,`DRE_JR_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Excel exportado com sucesso!');
+  pushH({type:'export',user:CU.label,ts:ts(),icon:'📊',descricao:'Exportação XLSX'});
+}
+
+// ══════════════════════════════════════════════════════════════
+// 10 — DASHBOARD EXECUTIVO
+// ══════════════════════════════════════════════════════════════
+const _dashCharts={};
+function destroyDashChart(id){if(_dashCharts[id]){_dashCharts[id].destroy();delete _dashCharts[id];}}
+
+function buildDashboard(per){
+  // Populate period selector
+  const sel=document.getElementById('dash-per-sel');
+  if(sel&&!per){
+    const cols=getOrderedCols();
+    sel.innerHTML=cols.map(p=>`<option value="${p}"${p===activePer?' selected':''}>${p}</option>`).join('');
+    per=sel.value||activePer;
+  }
+  per=per||activePer;
+  const d=PD[per];if(!d)return;
+  document.getElementById('dash-periodo').textContent=per;
+
+  // ── KPI Cards grandes ──────────────────────────────────────
+  const kpis=[
+    {l:'Faturamento',v:'R$ '+(d.fat/1e6).toFixed(2)+'M',s:'Total medido',
+     b:d.fat>0?'▲ Positivo':'▼ Zero',bc:d.fat>0?'b-green':'b-red',ac:'k-gold',icon:'💰'},
+    {l:'Receita Líquida',v:'R$ '+(d.rl/1e6).toFixed(2)+'M',s:fmtP(d.rl_p)+' do faturamento',
+     b:'',bc:'',ac:'k-gold',icon:'📈'},
+    {l:'Margem Contribuição',v:fmtP(d.mc_p),s:'R$ '+(d.mc/1e3).toFixed(0)+'k',
+     b:d.mc_p>=0.149?'✔ Meta atingida':'✘ Abaixo da meta',bc:d.mc_p>=0.149?'b-green':'b-red',
+     ac:d.mc_p>=0.149?'k-green':'k-red',icon:'📊'},
+    {l:'EBITDA',v:fmtP(d.ebt_p),s:'R$ '+(d.ebt/1e3).toFixed(0)+'k',
+     b:d.ebt>0?'▲ Positivo':'▼ Negativo',bc:d.ebt>0?'b-green':'b-red',
+     ac:d.ebt>0?'k-green':'k-red',icon:'🏦'},
+    {l:'% CSV Real',v:fmtP(d.csv_p),s:'Meta: ≤ 72%',
+     b:d.csv_p<=0.72?'✔ Dentro da meta':'✘ Acima da meta',bc:d.csv_p<=0.72?'b-green':'b-red',
+     ac:d.csv_p<=0.72?'k-green':'k-red',icon:'🔧'},
+    {l:'Resultado Líquido',v:'R$ '+(d.rliq/1e3).toFixed(0)+'k',s:fmtP(d.rliq_p)+' do faturamento',
+     b:d.rliq>0?'▲ Lucro':'▼ Prejuízo',bc:d.rliq>0?'b-green':'b-red',
+     ac:d.rliq>0?'k-green':'k-red',icon:'💹'},
+    {l:'Saldo Fluxo de Caixa',v:'R$ '+(d.fc/1e3).toFixed(0)+'k',s:'Após amortizações',
+     b:d.fc>0?'▲ Positivo':'▼ Negativo',bc:d.fc>0?'b-green':'b-red',
+     ac:d.fc>0?'k-green':'k-red',icon:'🏧'},
+    {l:'% Impostos',v:fmtP(d.imp_p),s:'Sobre faturamento',b:'',bc:'',ac:'k-gold',icon:'📋'},
+  ];
+  document.getElementById('dash-kpis').innerHTML=kpis.map(k=>`
+    <div class="kcard ${k.ac}" style="padding:18px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="font-size:1.4rem">${k.icon}</span>
+        <div class="klbl" style="margin:0">${k.l}</div>
+      </div>
+      <div class="kval" style="font-size:1.8rem">${k.v}</div>
+      <div class="ksub">${k.s}</div>
+      ${k.b?`<div class="kbadge ${k.bc}" style="margin-top:8px">${k.b}</div>`:''}
+    </div>`).join('');
+
+  // ── Gráfico barra: Fat vs RL vs EBITDA ────────────────────
+  destroyDashChart('bar');
+  const ctx1=document.getElementById('dash-bar')?.getContext('2d');
+  if(ctx1){
+    const anualCols=['Plano 2022','Ano 2022','Ano 2023 PE Plano','Ano 2023 Real',
+                     'Ano 2024','Ano 2025 PE Plano','Ano 2025 Real','PLANO 2026',per==='PLANO 2026'?null:per].filter(Boolean);
+    const labels=anualCols.map(c=>c.replace('Ano ','').replace(' PE Plano','P').replace('PLANO ','P'));
+    _dashCharts['bar']=new Chart(ctx1,{
+      type:'bar',
+      data:{labels,datasets:[
+        {label:'Faturamento',data:anualCols.map(c=>+(PD[c]?.fat||0)/1e6),backgroundColor:'rgba(139,26,34,.7)',borderRadius:3},
+        {label:'Receita Líquida',data:anualCols.map(c=>+(PD[c]?.rl||0)/1e6),backgroundColor:'rgba(201,162,39,.7)',borderRadius:3},
+        {label:'EBITDA',data:anualCols.map(c=>+(PD[c]?.ebt||0)/1e6),backgroundColor:'rgba(46,125,50,.7)',borderRadius:3},
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{tooltip:{callbacks:{label:c=>c.dataset.label+': R$ '+c.raw.toFixed(2)+'M'}}},
+        scales:{y:{ticks:{callback:v=>'R$'+v+'M'},grid:{color:'rgba(0,0,0,.05)'}},x:{grid:{display:false}}}}
+    });
+  }
+
+  // ── Donut: distribuição do faturamento ────────────────────
+  destroyDashChart('donut');
+  const ctx2=document.getElementById('dash-donut')?.getContext('2d');
+  if(ctx2&&d.fat){
+    const impostos=+d.imp||0,csv=+d.csv||0,pes=+d.pes||0,adm=+d.adm||0;
+    const outros=Math.max(0,d.fat-impostos-csv-pes-adm);
+    _dashCharts['donut']=new Chart(ctx2,{
+      type:'doughnut',
+      data:{
+        labels:['CSV','Impostos','Pessoal','Adm','Resultado'],
+        datasets:[{data:[csv,impostos,pes,adm,outros].map(v=>+(v/d.fat*100).toFixed(1)),
+          backgroundColor:['#8B1A22','#C9A227','#2E7D32','#6B6B6B','#1A1A1A'],
+          borderWidth:2,borderColor:'#fff'}]
+      },
+      options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
+        plugins:{tooltip:{callbacks:{label:c=>c.label+': '+c.raw+'%'}}}}
+    });
+  }
+
+  // ── Semáforo de metas ─────────────────────────────────────
+  const metas=[
+    {nome:'% CSV',val:d.csv_p,meta:0.72,dir:'lte',fmt:v=>fmtP(v)},
+    {nome:'% Margem Contribuição',val:d.mc_p,meta:0.149,dir:'gte',fmt:v=>fmtP(v)},
+    {nome:'% EBITDA',val:d.ebt_p,meta:0.06,dir:'gte',fmt:v=>fmtP(v)},
+    {nome:'% Impostos',val:d.imp_p,meta:0.11,dir:'lte',fmt:v=>fmtP(v)},
+    {nome:'Resultado Líquido',val:d.rliq,meta:0,dir:'gte',fmt:v=>'R$ '+(v/1e3).toFixed(0)+'k'},
+    {nome:'Fluxo de Caixa',val:d.fc,meta:0,dir:'gte',fmt:v=>'R$ '+(v/1e3).toFixed(0)+'k'},
+    {nome:'Faturamento',val:d.fat,meta:+(PD['Nova Meta Mês']?.fat||0),dir:'gte',fmt:v=>'R$ '+(v/1e6).toFixed(2)+'M'},
+  ];
+  document.getElementById('dash-semaforo').innerHTML=metas.map(m=>{
+    const ok=m.dir==='gte'?m.val>=m.meta:m.val<=m.meta;
+    const warn=m.dir==='gte'?m.val>=(m.meta*0.85):m.val<=(m.meta*1.15);
+    const led=ok?'verde':warn?'amarelo':'vermelho';
+    const status=ok?'✔ Meta atingida':warn?'⚡ Próximo da meta':'✘ Abaixo da meta';
+    return`<div class="semcard">
+      <div class="semled ${led}"></div>
+      <div class="seminfo">
+        <div class="semtitle">${m.nome}</div>
+        <div class="semval">${m.fmt(m.val)} ${m.meta?'| Meta: '+m.fmt(m.meta):''}</div>
+        <div style="font-size:.65rem;margin-top:2px;color:${led==='verde'?'var(--pos)':led==='amarelo'?'#F57F17':'var(--neg)'}">${status}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Update showPanel to include forgot panel
+const _origShowPanel=showPanel;
+function showPanel(id){
+  ['panel-login','panel-register','panel-pending','panel-forgot'].forEach(p=>{
+    const el=document.getElementById(p);if(el)el.style.display=p===id?'block':'none';
+  });
+  ['lerr','rg-err','rg-ok','fp-err','fp-ok'].forEach(i=>{
+    const el=document.getElementById(i);if(el)el.style.display='none';
+  });
+}
+
+// Update approveUser to send approval email
+const _origApproveUser=approveUser;
+async function approveUser(u){
+  const pending=await getPending();
+  const p=pending[u];
+  if(!p)return;
+  const role=document.getElementById(`role-${u}`).value;
+  const roleLabel={viewer:'Visualizador',editor:'Editor',admin:'Administrador'};
+  try{ await addApprovedUser(u,p.label,p.pass,role); }catch(e){console.warn('approve user err:',e);}
+  try{ await deletePending(u); }catch(e){console.warn('delete pending err:',e);}
+  const sharedUsers=await getApprovedUsers();
+  USERS=Object.assign({},DEFAULT_USERS,sharedUsers);
+  // Send approval email to user's email address
+  await sendApprovalEmail(p.label, u, role, p.email||'');
+  pushH({type:'approve',user:CU.label,ts:ts(),icon:'✅',target:p.label,role:roleLabel[role]});
+  updatePendingBadge();
+  renderPendingTab();
+  toast(`✔ ${p.label} aprovado como ${roleLabel[role]}! E-mail de confirmação enviado.`);
+}
+
+// Update doLogout to stop realtime
+const _origDoLogout=doLogout;
+function doLogout(){
+  stopRealtime();
+  pushH({type:'logout',user:CU.label,ts:ts(),icon:'👋'});
+  CU=null;editMode=editBal=editPlano=false;
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app').style.display='none';
+  document.getElementById('ip').value='';
+  showPanel('panel-login');
+}
+
+function promptSaveVersion(){
+  const label=prompt('Nome para esta versão (ex: "Fechamento Fev/26"):');
+  if(label&&label.trim()) snapshotDRE(label.trim());
+}
+
+// Load versions on startup
+loadDREVersions();
 </script>
 </body>
 </html>
