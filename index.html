@@ -1512,35 +1512,124 @@ async function loadPlanoFromSupabase(){
 
 // ══ ACUM RECALC ══
 function recalcAcum(){
+  // First recompute all individual columns
+  Object.keys(PD).forEach(per=>recomputePct(per));
+
   // Real monthly columns → Acum 2026 Real
   const mr=Object.keys(PD).filter(k=>PD[k]._month&&PD[k]._t==='real');
-  const nMeses=mr.length; // how many real months exist
+  const nMeses=mr.length;
 
   DROWS.forEach(r=>{
     if(r.type==='percent'||r.type==='blank')return;
-    // Acum 2026 Real = sum of all real monthly cols
-    let sr=0;
-    mr.forEach(k=>{sr+=+PD[k][r.id]||0;});
-    if(PD['Acum 2026 Real'])PD['Acum 2026 Real'][r.id]=sr;
-
-    // Acum Plano 2026 = Nova Meta Mês × number of real months accumulated
+    // Skip auto-calculated totals — sum raw inputs only
+    const autoCalc=['rl','mc','ebt','rliq','fc','bkop','ncg','fcop','endliq','oban','bkneg'];
+    if(autoCalc.includes(r.id)){
+      // Recalculate acum from monthly values (already computed above)
+      let sr=0;
+      mr.forEach(k=>{sr+=+PD[k][r.id]||0;});
+      if(PD['Acum 2026 Real'])PD['Acum 2026 Real'][r.id]=sr;
+    } else {
+      let sr=0;
+      mr.forEach(k=>{sr+=+PD[k][r.id]||0;});
+      if(PD['Acum 2026 Real'])PD['Acum 2026 Real'][r.id]=sr;
+    }
+    // Acum Plano 2026 = Nova Meta Mês × number of real months
     if(PD['Acum Plano 2026']&&PD['Nova Meta Mês']){
       PD['Acum Plano 2026'][r.id]=(+PD['Nova Meta Mês'][r.id]||0)*nMeses;
     }
   });
+
+  // Recompute pct for acum cols
   if(PD['Acum 2026 Real'])  recomputePct('Acum 2026 Real');
   if(PD['Acum Plano 2026']) recomputePct('Acum Plano 2026');
 }
 function recomputePct(per){
   const d=PD[per];if(!d)return;
+  const fat=+d.fat||0;
+
+  // ── Fórmulas automáticas ──────────────────────────────────
+
+  // Receita Líquida = fat - imp - dev - finv
+  if(fat){
+    const imp=+d.imp||0, dev=+d.dev||0, finv=+d.finv||0;
+    d.rl = fat - imp - dev - finv;
+    d.rl_p = fat ? d.rl/fat : 0;
+  }
+
+  // Margem de Contribuição = rl - csv - uf
+  {
+    const rl=+d.rl||0, csv=+d.csv||0, uf=+d.uf||0;
+    d.mc = rl - csv - uf;
+    d.mc_p = fat ? d.mc/fat : 0;
+  }
+
+  // EBITDA = mc - pes - adm - dep
+  {
+    const mc=+d.mc||0, pes=+d.pes||0, adm=+d.adm||0, dep=+d.dep||0;
+    d.ebt = mc - pes - adm - dep;
+    d.ebt_p = fat ? d.ebt/fat : 0;
+  }
+
+  // Resultado Líquido = ebt - rfin - csir
+  {
+    const ebt=+d.ebt||0, rfin=+d.rfin||0, csir=+d.csir||0;
+    d.rliq = ebt - rfin - csir;
+    d.rliq_p = fat ? d.rliq/fat : 0;
+  }
+
+  // Saldo para o Fluxo de Caixa = rliq - amort - mutuo
+  {
+    const rliq=+d.rliq||0, amort=+d.amort||0, mutuo=+d.mutuo||0;
+    d.fc = rliq - amort - mutuo;
+  }
+
+  // Breakeven Operacional = (pes + adm) / mc_p
+  {
+    const pes=+d.pes||0, adm=+d.adm||0, mc_p=+d.mc_p||0;
+    d.bkop = mc_p ? (pes + adm) / mc_p : 0;
+  }
+
+  // NCG = estq + crec - cpag
+  {
+    const estq=+d.estq||0, crec=+d.crec||0, cpag=+d.cpag||0;
+    d.ncg = estq + crec - cpag;
+  }
+
+  // Fluxo de Caixa Operacional = fc - (ncg - ncg_ant) + caixa + banco
+  {
+    const fc=+d.fc||0, ncg=+d.ncg||0, ncg_ant=+d.ncg_ant||0;
+    const caixa=+d.caixa||0, banco=+d.banco||0;
+    d.fcop = fc - (ncg - ncg_ant) + caixa + banco;
+  }
+
+  // Endividamento Líquido = (div12 + div12p) / ebt  (em anos)
+  {
+    const div12=+d.div12||0, div12p=+d.div12p||0, ebt=+d.ebt||0;
+    d.endliq = ebt ? (div12 + div12p) / ebt : 0;
+  }
+
+  // Obrigação anual da dívida = div12 / ebt
+  {
+    const div12=+d.div12||0, ebt=+d.ebt||0;
+    d.oban = ebt ? div12 / ebt : 0;
+  }
+
+  // Breakeven Negócio = (pes + adm + rfin + csir + amort + mutuo) / mc_p
+  {
+    const pes=+d.pes||0, adm=+d.adm||0, rfin=+d.rfin||0;
+    const csir=+d.csir||0, amort=+d.amort||0, mutuo=+d.mutuo||0;
+    const mc_p=+d.mc_p||0;
+    d.bkneg = mc_p ? (pes + adm + rfin + csir + amort + mutuo) / mc_p : 0;
+  }
+
+  // ── % calculados ──────────────────────────────────────────
   DROWS.forEach(r=>{
     if(r.type!=='percent')return;
     if(r.special==='csvuf'){
-      const fat=+d.fat||1;
-      d[r.id]=(+d.csv+ +d.uf)/fat;
+      d[r.id] = fat ? (+d.csv + +d.uf)/fat : 0;
     } else if(r.ref&&r.base){
       const base=+d[r.base];
-      if(base)d[r.id]=+d[r.ref]/base;
+      if(base) d[r.id]=+d[r.ref]/base;
     }
   });
 }
