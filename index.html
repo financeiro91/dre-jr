@@ -635,6 +635,17 @@ tbody tr:last-child td{border-bottom:none;}
       <div class="hbar" id="hbar">Ocultas: <span id="hnames"></span></div>
       <div class="fbar">
         <input class="srch" type="text" placeholder="Filtrar indicador..." oninput="filterDRE(this.value)">
+        <select class="sel" id="dre-year-filter" onchange="filterDREByYear(this.value)" title="Filtrar por ano/tipo">
+          <option value="all">Mostrar todas</option>
+          <option value="2022">2022</option>
+          <option value="2023">2023</option>
+          <option value="2024">2024</option>
+          <option value="2025">2025</option>
+          <option value="2026">2026</option>
+          <option value="real">Só Reais</option>
+          <option value="plan">Só Planos</option>
+          <option value="month">Só Mensais</option>
+        </select>
         <button class="tbtn" id="edit-btn" onclick="toggleEdit()">✎ Editar Valores</button>
       </div>
       <div class="twrap"><table><thead id="dre-h"></thead><tbody id="dre-b"></tbody></table></div>
@@ -718,13 +729,13 @@ tbody tr:last-child td{border-bottom:none;}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
         <div class="kcard k-gold" style="padding:14px">
           <div class="klbl">Indicador selecionado — Evolução Anual</div>
-          <div style="position:relative;height:160px">
+          <div style="position:relative;height:280px">
             <canvas id="graf-anual"></canvas>
           </div>
         </div>
         <div class="kcard k-red" style="padding:14px">
           <div class="klbl">2026 — Mensal (Plano vs Real)</div>
-          <div style="position:relative;height:160px">
+          <div style="position:relative;height:280px">
             <canvas id="graf-mensal"></canvas>
           </div>
         </div>
@@ -732,19 +743,19 @@ tbody tr:last-child td{border-bottom:none;}
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
         <div class="kcard" style="padding:14px">
           <div class="klbl">% CSV Real — Evolução</div>
-          <div style="position:relative;height:130px">
+          <div style="position:relative;height:220px">
             <canvas id="graf-csv"></canvas>
           </div>
         </div>
         <div class="kcard" style="padding:14px">
           <div class="klbl">% Margem de Contribuição — Evolução</div>
-          <div style="position:relative;height:130px">
+          <div style="position:relative;height:220px">
             <canvas id="graf-mc"></canvas>
           </div>
         </div>
         <div class="kcard" style="padding:14px">
           <div class="klbl">% EBITDA — Evolução</div>
-          <div style="position:relative;height:130px">
+          <div style="position:relative;height:220px">
             <canvas id="graf-ebt"></canvas>
           </div>
         </div>
@@ -1710,7 +1721,7 @@ function buildDRE(){
       const disp=isPct?fmtP(v):fmtV(v);
       const c=(!isPct&&v!=null&&!isNaN(+v))?vc(v):'';
       const isAcum=d._t==='acum-plan'||d._t==='acum-real';
-      const fmark=isPct&&isAcum?'<sup style="color:var(--jr-gold2);font-size:0.6rem;margin-left:1px">ƒ</sup>':'';
+      const fmark='';
       // Editable: click directly on cell — no pencil needed
       if(!isPct&&editMode&&CU?.role!=='viewer'){
         const pp=p.replace(/'/g,"\\'").replace(/\//g,'\\/');
@@ -1722,6 +1733,30 @@ function buildDRE(){
   }).join('');
 }
 function filterDRE(q){document.querySelectorAll('#dre-b tr').forEach(r=>{r.style.display=(r.dataset.lbl||'').includes(q.toLowerCase())?'':'none';});}
+
+function filterDREByYear(val){
+  if(val==='all'){
+    // Show all columns
+    Object.keys(PD).forEach(p=>{ const i=HC.indexOf(p); if(i>=0){HC.splice(i,1);} });
+    saveHC();buildPerBtns();buildDRE();
+    toast('Todas as colunas visíveis');
+    return;
+  }
+  // Hide columns that don't match the filter
+  const toHide=Object.keys(PD).filter(p=>{
+    if(val==='real') return PD[p]._t!=='real';
+    if(val==='plan') return PD[p]._t!=='plan'&&PD[p]._t!=='meta';
+    if(val==='month') return !PD[p]._month;
+    // Year filter
+    return !p.includes(val);
+  });
+  const toShow=Object.keys(PD).filter(p=>!toHide.includes(p));
+  // Reset HC then hide non-matching
+  HC.length=0;
+  toHide.forEach(p=>{ if(!HC.includes(p)) HC.push(p); });
+  saveHC();buildPerBtns();buildDRE();
+  toast('Filtro aplicado: '+val+' ('+toShow.length+' colunas visíveis)');
+}
 function toggleEdit(){
   if(CU?.role==='viewer'){toast('Sem permissão de edição','error');return;}
   editMode=!editMode;
@@ -2012,7 +2047,7 @@ function buildBal(){
       if(isHdr) return`<td style="text-align:right">${BAL_COLS[ci+1]||""}</td>`;
       if(isFml){
         const nm=parsePT(val);
-        return`<td style="text-align:right;${nm<0?"color:var(--neg)":""}">${val}<sup title="Calculado automaticamente" style="color:var(--jr-gold2);font-size:.55rem;margin-left:2px">ƒ</sup></td>`;
+        return`<td style="text-align:right;${nm<0?"color:var(--neg)":""}">${val}</td>`;
       }
       if(editBal&&CU?.role!=="viewer")
         return`<td class="td-edit" style="text-align:right" title="Clique para editar" onclick="inlineEditBal(this,${ri},${ci})">${val}</td>`;
@@ -2908,7 +2943,7 @@ function buildFC(){
     const cells=FC.semanas.map((s,si)=>{
       const v=l.vals[s];
       const vn=fcResolve(v);
-      const disp=isTot?`<strong>${fmtV(vn)}</strong>`:fmtV(vn);
+      const disp=isTot?`<strong>${fmtV(vn)}</strong>`:vn!==0?fmtV(vn):'—';
       const colorCls=!isTot&&vn!==0?vc(vn):'';
       if(editFC&&!isTot&&CU?.role!=='viewer'){
         const rawVal=v!==null&&v!==undefined?String(v):'';
