@@ -1431,13 +1431,14 @@ const save=()=>{
 };
 const saveX=()=>{
   localStorage.setItem('jr4_x',JSON.stringify(SX));
-  // Save custom periods to Supabase
+  // Save custom periods to Supabase — including metadata
   Object.keys(SX).forEach(periodo=>{
-    Object.keys(SX[periodo]).forEach(campo=>{
+    const allFields={...SX[periodo]};
+    Object.keys(allFields).forEach(campo=>{
       sbFetch('dre_dados',{
         method:'POST',
         prefer:'resolution=merge-duplicates',
-        body:JSON.stringify({periodo,campo,valor:SX[periodo][campo]})
+        body:JSON.stringify({periodo,campo,valor:allFields[campo]??''})
       }).catch(()=>{});
     });
   });
@@ -1460,14 +1461,46 @@ async function loadDREFromSupabase(){
   try{
     const rows=await sbFetch('dre_dados?select=*');
     if(!rows||!rows.length)return;
+
+    // First pass: detect custom periods (new columns not in base PD)
+    const customPeriods={};
+    rows.forEach(({periodo,campo,valor})=>{
+      if(!PD[periodo]){
+        if(!customPeriods[periodo]) customPeriods[periodo]={};
+        customPeriods[periodo][campo]=valor;
+      }
+    });
+
+    // Restore custom periods (new months added by user)
+    Object.keys(customPeriods).forEach(periodo=>{
+      const data=customPeriods[periodo];
+      // Reconstruct the period object
+      const b={};
+      DROWS.forEach(r=>{if(r.type!=='blank')b[r.id]=0;});
+      // Apply saved values
+      Object.keys(data).forEach(campo=>{ b[campo]=data[campo]; });
+      // Restore metadata (_t, _month) from campo entries
+      if(data._t) b._t=data._t;
+      if(data._month) b._month=data._month;
+      PD[periodo]=b;
+      SX[periodo]=JSON.parse(JSON.stringify(b));
+    });
+
+    // Second pass: apply edits to existing periods
     rows.forEach(({periodo,campo,valor})=>{
       if(!PD[periodo])return;
+      // Skip metadata fields in SE
+      if(campo.startsWith('_'))return;
       PD[periodo][campo]=valor;
       if(!SE[periodo])SE[periodo]={};
       SE[periodo][campo]=valor;
     });
+
+    // Save restored state to localStorage
     localStorage.setItem('jr4_e',JSON.stringify(SE));
+    localStorage.setItem('jr4_x',JSON.stringify(SX));
     recalcAcum();
+    console.log(`✅ DRE carregado: ${rows.length} registros, ${Object.keys(customPeriods).length} colunas customizadas`);
   }catch(e){console.warn('loadDRE error:',e);}
 }
 
@@ -3071,27 +3104,65 @@ function addFCSemana(){
   if(CU?.role==='viewer'){toast('Sem permissão','error');return;}
   const label=prompt('Nome da nova semana (ex: 18/04 a 24/04):');
   if(!label||!label.trim())return;
-  FC.semanas.push(label.trim());
+  const s=label.trim();
+  FC.semanas.push(s);
+  // Persist the semanas list to Supabase (using linha_idx=-1 as metadata)
+  sbFetch('fluxo_caixa',{
+    method:'POST',
+    prefer:'resolution=merge-duplicates',
+    body:JSON.stringify({linha_idx:-1,semana:'__semanas__',valor:JSON.stringify(FC.semanas),descricao:'semanas',tipo:'meta'})
+  }).catch(e=>console.warn('FC semanas save err:',e));
   buildFC();
-  toast(`Semana "${label.trim()}" adicionada!`);
+  toast(`Semana "${s}" adicionada!`);
 }
 
 function addFCLinha(tipo){
   if(CU?.role==='viewer'){toast('Sem permissão','error');return;}
   const desc=prompt(`Descrição da nova linha de ${tipo}:`);
   if(!desc||!desc.trim())return;
-  // Insert before total_deb if Credito, at end if Debito
   const idx=tipo==='Credito'?FC.linhas.findIndex(l=>l.tipo==='total_deb'):FC.linhas.length;
   FC.linhas.splice(idx,0,{tipo,desc:desc.trim(),vals:{}});
+  // Save all lines metadata
+  saveFCMetadata();
   buildFC();
   toast(`Linha "${desc.trim()}" adicionada!`);
+}
+
+function saveFCMetadata(){
+  // Save semanas list
+  sbFetch('fluxo_caixa',{
+    method:'POST',
+    prefer:'resolution=merge-duplicates',
+    body:JSON.stringify({linha_idx:-1,semana:'__semanas__',valor:JSON.stringify(FC.semanas),descricao:'semanas',tipo:'meta'})
+  }).catch(()=>{});
+  // Save linhas metadata (desc and tipo for each line)
+  FC.linhas.forEach((l,li)=>{
+    sbFetch('fluxo_caixa',{
+      method:'POST',
+      prefer:'resolution=merge-duplicates',
+      body:JSON.stringify({linha_idx:li,semana:'__meta__',valor:'',descricao:l.desc,tipo:l.tipo})
+    }).catch(()=>{});
+  });
 }
 
 async function loadFCFromSupabase(){
   try{
     const rows=await sbFetch('fluxo_caixa?select=*&order=linha_idx.asc');
     if(!rows||!rows.length)return;
+
+    // Restore semanas list if saved
+    const semanasRow=rows.find(r=>r.linha_idx===-1&&r.semana==='__semanas__');
+    if(semanasRow){
+      try{
+        const saved=JSON.parse(semanasRow.valor);
+        if(Array.isArray(saved)&&saved.length>0) FC.semanas=saved;
+      }catch{}
+    }
+
+    // Restore cell values — skip metadata rows
     rows.forEach(r=>{
+      if(r.linha_idx<0)return; // skip metadata
+      if(r.semana==='__meta__')return; // skip line metadata
       if(r.linha_idx>=0&&r.linha_idx<FC.linhas.length){
         FC.linhas[r.linha_idx].vals[r.semana]=r.valor;
       }
