@@ -2132,9 +2132,14 @@ async function loadDREFromSupabase(){
       DROWS.forEach(r=>{if(r.type!=='blank')b[r.id]=0;});
       // Apply saved values
       Object.keys(data).forEach(campo=>{ b[campo]=data[campo]; });
-      // Restore metadata (_t, _month) from campo entries
+      // Restore metadata (_t, _month) — do banco ou inferido pelo nome do período
       if(data._t) b._t=data._t;
+      else b._t='real';
       if(data._month) b._month=data._month;
+      else{
+        const m=periodo.match(/^([A-Za-zÀ-ÿ]+\/\d{2})/);
+        if(m) b._month=m[1];
+      }
       PD[periodo]=b;
       SX[periodo]=JSON.parse(JSON.stringify(b));
     });
