@@ -2357,7 +2357,7 @@ function init(){
     loadBalFromSupabase(),
     loadPlanoFromSupabase()
   ]).then(()=>{
-    buildKPI();buildDRE();buildBal();buildPlano(PLANO);buildDashboard();
+    buildPerBtns();buildKPI();buildDRE();buildBal();buildPlano(PLANO);buildDashboard();
   });
   // Start realtime sync
   startRealtime();
