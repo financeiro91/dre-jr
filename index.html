@@ -921,10 +921,10 @@ function togglePwd(id,eye){
   else{inp.type='password';eye.textContent='👁';}
 }
 function showPanel(id){
-  ['panel-login','panel-register','panel-pending'].forEach(p=>{
-    document.getElementById(p).style.display=p===id?'block':'none';
+  ['panel-login','panel-register','panel-pending','panel-forgot'].forEach(p=>{
+    const el=document.getElementById(p);if(el)el.style.display=p===id?'block':'none';
   });
-  ['lerr','rg-err','rg-ok'].forEach(i=>{
+  ['lerr','rg-err','rg-ok','fp-err','fp-ok'].forEach(i=>{
     const el=document.getElementById(i);if(el)el.style.display='none';
   });
 }
@@ -1106,6 +1106,7 @@ async function doRegister(){
 }
 
 function doLogout(){
+  if(typeof stopRealtime==='function')stopRealtime();
   pushH({type:'logout',user:CU.label,ts:ts(),icon:'👋'});
   CU=null;editMode=editBal=editPlano=false;
   document.getElementById('login-screen').style.display='flex';
@@ -1153,17 +1154,15 @@ async function approveUser(u){
   if(!p)return;
   const role=document.getElementById(`role-${u}`).value;
   const roleLabel={viewer:'Visualizador',editor:'Editor',admin:'Administrador'};
-  // Add to Supabase approved users
   try{ await addApprovedUser(u, p.label, p.pass, role); }catch(e){console.warn('approve user err:',e);}
-  // Remove from Supabase pending
   try{ await deletePending(u); }catch(e){console.warn('delete pending err:',e);}
-  // Update local cache
   const sharedUsers=await getApprovedUsers();
   USERS=Object.assign({},DEFAULT_USERS,sharedUsers);
+  await sendApprovalEmail(p.label, u, role, p.email||'');
   pushH({type:'approve',user:CU.label,ts:ts(),icon:'✅',target:p.label,role:roleLabel[role]});
   updatePendingBadge();
   renderPendingTab();
-  toast(`✔ ${p.label} aprovado como ${roleLabel[role]}!`);
+  toast(`✔ ${p.label} aprovado como ${roleLabel[role]}! E-mail de confirmação enviado.`);
 }
 
 async function rejectUser(u){
@@ -1913,12 +1912,23 @@ function confEditBlur(per,rowId,inp){
   setTimeout(()=>{if(document.activeElement!==inp)saveEditDRE(per,rowId,inp);},120);
 }
 function saveEditDRE(per,rowId,inp){
-  const nv=parseFloat(inp.value);
+  const nv=parseFloat(inp.value.replace(/\./g,'').replace(',','.'));
   if(isNaN(nv)){buildDRE();return;}
   const old=PD[per][rowId];
   if(nv===old){buildDRE();return;}
   PD[per][rowId]=nv;
-  if(!SE[per])SE[per]={};SE[per][rowId]=nv;save();
+  // Save to SE (edits cache) and SX (custom cols) if applicable
+  if(!SE[per])SE[per]={};
+  SE[per][rowId]=nv;
+  if(SX[per]){SX[per][rowId]=nv;} // keep SX in sync for custom periods
+  // Save directly to Supabase
+  sbFetch('dre_dados',{
+    method:'POST',
+    prefer:'resolution=merge-duplicates',
+    body:JSON.stringify({periodo:per,campo:rowId,valor:nv})
+  }).catch(()=>{});
+  localStorage.setItem('jr4_e',JSON.stringify(SE));
+  localStorage.setItem('jr4_x',JSON.stringify(SX));
   recomputePct(per);
   if(PD[per]._month)recalcAcum();
   const lbl=DROWS.find(r=>r.id===rowId)?.label||rowId;
@@ -2878,49 +2888,6 @@ function buildDashboard(per){
   buildProgressoBars(d);
 }
 
-// Update showPanel to include forgot panel
-const _origShowPanel=showPanel;
-function showPanel(id){
-  ['panel-login','panel-register','panel-pending','panel-forgot'].forEach(p=>{
-    const el=document.getElementById(p);if(el)el.style.display=p===id?'block':'none';
-  });
-  ['lerr','rg-err','rg-ok','fp-err','fp-ok'].forEach(i=>{
-    const el=document.getElementById(i);if(el)el.style.display='none';
-  });
-}
-
-// Update approveUser to send approval email
-const _origApproveUser=approveUser;
-async function approveUser(u){
-  const pending=await getPending();
-  const p=pending[u];
-  if(!p)return;
-  const role=document.getElementById(`role-${u}`).value;
-  const roleLabel={viewer:'Visualizador',editor:'Editor',admin:'Administrador'};
-  try{ await addApprovedUser(u,p.label,p.pass,role); }catch(e){console.warn('approve user err:',e);}
-  try{ await deletePending(u); }catch(e){console.warn('delete pending err:',e);}
-  const sharedUsers=await getApprovedUsers();
-  USERS=Object.assign({},DEFAULT_USERS,sharedUsers);
-  // Send approval email to user's email address
-  await sendApprovalEmail(p.label, u, role, p.email||'');
-  pushH({type:'approve',user:CU.label,ts:ts(),icon:'✅',target:p.label,role:roleLabel[role]});
-  updatePendingBadge();
-  renderPendingTab();
-  toast(`✔ ${p.label} aprovado como ${roleLabel[role]}! E-mail de confirmação enviado.`);
-}
-
-// Update doLogout to stop realtime
-const _origDoLogout=doLogout;
-function doLogout(){
-  stopRealtime();
-  pushH({type:'logout',user:CU.label,ts:ts(),icon:'👋'});
-  CU=null;editMode=editBal=editPlano=false;
-  document.getElementById('login-screen').style.display='flex';
-  document.getElementById('app').style.display='none';
-  document.getElementById('ip').value='';
-  showPanel('panel-login');
-}
-
 // ══════════════════════════════════════════════════════════════
 // FLUXO DE CAIXA SEMANAL
 // ══════════════════════════════════════════════════════════════
@@ -3025,69 +2992,150 @@ function buildFC(){
   const plan=fcPlanejado();
   const atend=fcAtendimento(plan);
 
-  // KPIs
-  const ultimaSem=FC.semanas[FC.semanas.length-1];
-  const totalCred=fcResolve(FC.linhas.find(l=>l.tipo==='total_cred').vals[ultimaSem]);
-  const totalDeb=fcResolve(FC.linhas.find(l=>l.tipo==='total_deb').vals[ultimaSem]);
+  // Filtrar semanas visíveis
+  const visSemanasAll=FC.semanas;
+  const visSemanas=visSemanasAll.filter(s=>!FC_HC.includes(s));
+
+  // KPIs — usa última semana VISÍVEL
+  const ultimaSem=visSemanas[visSemanas.length-1]||visSemanasAll[visSemanasAll.length-1];
+  const totalCred=fcResolve(FC.linhas.find(l=>l.tipo==='total_cred')?.vals[ultimaSem]);
+  const totalDeb=fcResolve(FC.linhas.find(l=>l.tipo==='total_deb')?.vals[ultimaSem]);
   const saldo=plan[ultimaSem]||0;
   document.getElementById('fc-kpis').innerHTML=[
     {l:'Total Créditos',v:fmtV(totalCred),s:ultimaSem,ac:'k-gold'},
     {l:'Total Débitos',v:fmtV(totalDeb),s:ultimaSem,ac:'k-red'},
     {l:'FC Planejado Acum.',v:(saldo<0?'('+fmtV(Math.abs(saldo))+')':fmtV(saldo)),s:'Acumulado',ac:saldo>=0?'k-green':'k-red'},
-    {l:'Semanas cadastradas',v:FC.semanas.length,s:'períodos ativos',ac:'k-gold'},
+    {l:'Semanas visíveis',v:visSemanas.length+'/'+visSemanasAll.length,s:'períodos',ac:'k-gold'},
   ].map(k=>`<div class="kcard ${k.ac}" style="padding:14px"><div class="klbl">${k.l}</div><div class="kval" style="font-size:1.3rem">${k.v}</div><div class="ksub">${k.s}</div></div>`).join('');
 
-  // Cabeçalho
+  // Cabeçalho — só semanas visíveis
   document.getElementById('fc-head').innerHTML=`<tr>
     <th style="min-width:110px">Conta</th>
     <th style="min-width:200px">Descrição</th>
-    ${FC.semanas.map(s=>`<th class="th-real">${s}</th>`).join('')}
+    ${visSemanasAll.map((s,si)=>{
+      const hidden=FC_HC.includes(s);
+      if(hidden) return'<th class="th-real" style="opacity:.4;min-width:40px;position:relative;padding:2px 4px;font-size:.6rem">'+s.split(' ')[0]+'<button onclick="toggleFCSemana('+si+')" title="Mostrar semana" style="display:block;width:100%;background:var(--jr-gold);color:#000;border:none;border-radius:2px;font-size:.55rem;cursor:pointer;margin-top:2px">👁</button></th>';
+      const delBtn=editFC&&CU?.role!=='viewer'?'<button onclick="delFCSemana('+si+')" title="Excluir semana" style="position:absolute;top:2px;right:18px;background:rgba(255,0,0,.7);color:#fff;border:none;border-radius:3px;font-size:.6rem;padding:1px 4px;cursor:pointer;line-height:1">✕</button>':'';
+      const hideBtn='<button onclick="toggleFCSemana('+si+')" title="Ocultar semana" style="position:absolute;top:2px;right:2px;background:rgba(100,100,100,.5);color:#fff;border:none;border-radius:3px;font-size:.6rem;padding:1px 4px;cursor:pointer;line-height:1">−</button>';
+      return'<th class="th-real" style="position:relative;padding-right:36px">'+s+delBtn+hideBtn+'</th>';
+    }).join('')}
+    ${editFC&&CU?.role!=='viewer'?'<th style="width:30px"></th>':''}
   </tr>
   <tr style="background:#1a2e1a">
     <td colspan="2" style="color:var(--jr-gold);font-weight:700;font-size:.7rem;padding:4px 8px">% ATENDIMENTO</td>
-    ${FC.semanas.map(s=>`<td style="text-align:right;color:var(--jr-gold);font-size:.72rem;font-weight:700;padding:4px 6px">${atend[s]?(atend[s]*100).toFixed(1)+'%':'—'}</td>`).join('')}
+    ${visSemanasAll.map(s=>FC_HC.includes(s)?'<td style="opacity:.3;font-size:.6rem;text-align:center">—</td>':`<td style="text-align:right;color:var(--jr-gold);font-size:.72rem;font-weight:700;padding:4px 6px">${atend[s]?(atend[s]*100).toFixed(1)+'%':'—'}</td>`).join('')}
+    ${editFC?'<td></td>':''}
   </tr>
   <tr style="background:#0d1f0d">
     <td colspan="2" style="color:#5EAD62;font-weight:700;font-size:.7rem;padding:4px 8px">FC PLANEJADO (Acumulado)</td>
-    ${FC.semanas.map(s=>`<td style="text-align:right;color:${(plan[s]||0)>=0?'#5EAD62':'var(--neg)'};font-size:.72rem;font-weight:700;padding:4px 6px">${fmtV(plan[s]||0)}</td>`).join('')}
+    ${visSemanasAll.map(s=>FC_HC.includes(s)?'<td style="opacity:.3;text-align:center">—</td>':`<td style="text-align:right;color:${(plan[s]||0)>=0?'#5EAD62':'var(--neg)'};font-size:.72rem;font-weight:700;padding:4px 6px">${fmtV(plan[s]||0)}</td>`).join('')}
+    ${editFC?'<td></td>':''}
   </tr>
   <tr style="background:#0d1f0d">
     <td colspan="2" style="color:#aaa;font-size:.7rem;padding:4px 8px">FC REALIZADO</td>
-    ${FC.semanas.map(s=>`<td style="text-align:right;color:#aaa;font-size:.72rem;padding:4px 6px">${FC.realizado[s]?fmtV(fcResolve(FC.realizado[s])):'—'}</td>`).join('')}
+    ${visSemanasAll.map(s=>FC_HC.includes(s)?'<td style="opacity:.3;text-align:center">—</td>':`<td style="text-align:right;color:#aaa;font-size:.72rem;padding:4px 6px">${FC.realizado[s]?fmtV(fcResolve(FC.realizado[s])):'—'}</td>`).join('')}
+    ${editFC?'<td></td>':''}
   </tr>`;
 
-  // Corpo
+  // Corpo — colunas ocultas ficam em cinza
   document.getElementById('fc-body').innerHTML=FC.linhas.map((l,li)=>{
     if(!l.desc&&!l.tipo)return'';
     const isTot=l.tipo==='total_cred'||l.tipo==='total_deb';
     const cls=isTot?'r-total':l.tipo==='Credito'?'':'r-pct';
     const corStyle=l.cor==='red'?'color:var(--neg)':'';
-    const cells=FC.semanas.map((s,si)=>{
+    const cells=visSemanasAll.map((s,si)=>{
+      const hidden=FC_HC.includes(s);
       const v=l.vals[s];
       const vn=fcResolve(v);
       const disp=isTot?`<strong>${fmtV(vn)}</strong>`:vn!==0?fmtV(vn):'—';
       const colorCls=!isTot&&vn!==0?vc(vn):'';
+      if(hidden) return`<td style="opacity:.25;text-align:right;font-size:.65rem">${vn!==0?fmtV(vn):'—'}</td>`;
       if(editFC&&!isTot&&CU?.role!=='viewer'){
         const rawVal=v!==null&&v!==undefined?String(v):'';
         return`<td><input class="ci" style="width:110px;text-align:right" value="${rawVal}" onblur="saveFCCell(${li},'${s}',this.value)" onkeydown="if(event.key==='Enter'||event.key==='Tab'){event.preventDefault();saveFCCell(${li},'${s}',this.value);}"></td>`;
       }
       return`<td class="${colorCls}" style="text-align:right">${vn!==0||isTot?disp:'—'}</td>`;
     }).join('');
-    return`<tr class="${cls}"><td style="${corStyle}">${l.tipo!=='total_cred'&&l.tipo!=='total_deb'?l.tipo:''}</td><td style="${corStyle}${l.bold?';font-weight:700':''}">${l.desc}</td>${cells}</tr>`;
+    return`<tr class="${cls}">
+      <td style="${corStyle}">${l.tipo!=='total_cred'&&l.tipo!=='total_deb'?l.tipo:''}</td>
+      <td style="${corStyle}${l.bold?';font-weight:700':''}">${l.desc}</td>
+      ${cells}
+      ${editFC&&!isTot&&CU?.role!=='viewer'?`<td style="padding:2px 4px"><button onclick="delFCLinha(${li})" title="Excluir linha" style="background:rgba(255,0,0,.7);color:#fff;border:none;border-radius:3px;font-size:.65rem;padding:2px 6px;cursor:pointer">✕</button></td>`:''}
+    </tr>`;
   }).join('');
 }
 
 function saveFCCell(li, semana, val){
-  const num=val.startsWith('=')?val:+val.replace(/\./g,'').replace(',','.')||val||null;
+  if(!val&&val!==0)return;
+  const strVal=String(val||'');
+  const num=strVal.startsWith('=')?strVal:+strVal.replace(/\./g,'').replace(',','.')||0;
   FC.linhas[li].vals[semana]=num;
-  // Save to Supabase
+  // Save immediately to Supabase
   sbFetch('fluxo_caixa',{
     method:'POST',
     prefer:'resolution=merge-duplicates',
-    body:JSON.stringify({linha_idx:li,semana,valor:String(val||''),descricao:FC.linhas[li].desc,tipo:FC.linhas[li].tipo})
+    body:JSON.stringify({
+      linha_idx:li,
+      semana,
+      valor:strVal,
+      descricao:FC.linhas[li].desc||'',
+      tipo:FC.linhas[li].tipo||''
+    })
   }).catch(e=>console.warn('FC save err:',e));
   buildFC();
-  toast('FC atualizado!');
+  toast('💾 Salvo!');
+}
+
+// FC — ocultar/mostrar semanas
+let FC_HC=[]; // semanas ocultas no FC
+
+function toggleFCSemana(si){
+  const s=FC.semanas[si];
+  const idx=FC_HC.indexOf(s);
+  if(idx>=0) FC_HC.splice(idx,1);
+  else FC_HC.push(s);
+  localStorage.setItem('jr_fc_hc',JSON.stringify(FC_HC));
+  buildFC();
+  toast(FC_HC.includes(s)?`Semana "${s}" ocultada`:`Semana "${s}" visível`);
+}
+// Load FC hidden cols from localStorage
+try{FC_HC=JSON.parse(localStorage.getItem('jr_fc_hc')||'[]');}catch{FC_HC=[];}
+
+function delFCLinha(li){
+  if(CU?.role==='viewer'){toast('Sem permissão','error');return;}
+  const l=FC.linhas[li];
+  if(!confirm(`Excluir linha "${l.desc}"? Esta ação não pode ser desfeita.`))return;
+  // Delete from Supabase
+  FC.semanas.forEach(s=>{
+    sbFetch(`fluxo_caixa?linha_idx=eq.${li}&semana=eq.${encodeURIComponent(s)}`,{
+      method:'DELETE'
+    }).catch(()=>{});
+  });
+  FC.linhas.splice(li,1);
+  saveFCMetadata();
+  buildFC();
+  toast(`Linha "${l.desc}" excluída!`);
+}
+
+function delFCSemana(si){
+  if(CU?.role==='viewer'){toast('Sem permissão','error');return;}
+  const s=FC.semanas[si];
+  if(!confirm(`Excluir semana "${s}" e todos os seus dados? Esta ação não pode ser desfeita.`))return;
+  // Delete all entries for this semana from Supabase
+  sbFetch(`fluxo_caixa?semana=eq.${encodeURIComponent(s)}`,{
+    method:'DELETE'
+  }).catch(()=>{});
+  // Remove from FC data
+  FC.semanas.splice(si,1);
+  FC.linhas.forEach(l=>{ delete l.vals[s]; });
+  // Save updated semanas list
+  sbFetch('fluxo_caixa',{
+    method:'POST',
+    prefer:'resolution=merge-duplicates',
+    body:JSON.stringify({linha_idx:-1,semana:'__semanas__',valor:JSON.stringify(FC.semanas),descricao:'semanas',tipo:'meta'})
+  }).catch(()=>{});
+  buildFC();
+  toast(`Semana "${s}" excluída!`);
 }
 
 function toggleEditFC(){
