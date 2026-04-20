@@ -946,19 +946,22 @@ const SB_KEY = 'sb_publishable_-R8tG7fB1drFKTJlaAxp6A_ieNbOUg_';
 
 // Generic Supabase REST helper
 async function sbFetch(path, opts={}){
+  const headers={
+    'apikey': SB_KEY,
+    'Authorization': `Bearer ${SB_KEY}`,
+    'Content-Type': 'application/json',
+    ...(opts.headers||{})
+  };
+  if(opts.prefer) headers['Prefer']=opts.prefer;
+  if(opts.method==='POST') headers['Prefer']=(opts.prefer||'return=minimal');
   const res = await fetch(`${SB_URL}/rest/v1/${path}`, {
-    ...opts,
-    headers:{
-      'apikey': SB_KEY,
-      'Authorization': `Bearer ${SB_KEY}`,
-      'Content-Type': 'application/json',
-      'Prefer': opts.prefer||'',
-      ...(opts.headers||{})
-    }
+    method: opts.method||'GET',
+    body: opts.body||undefined,
+    headers
   });
   if(!res.ok){
     const err = await res.text();
-    throw new Error(`Supabase error: ${res.status} ${err}`);
+    throw new Error(`Supabase ${res.status}: ${err}`);
   }
   const txt = await res.text();
   return txt ? JSON.parse(txt) : null;
@@ -1912,28 +1915,33 @@ function confEditBlur(per,rowId,inp){
   setTimeout(()=>{if(document.activeElement!==inp)saveEditDRE(per,rowId,inp);},120);
 }
 function saveEditDRE(per,rowId,inp){
-  const nv=parseFloat(inp.value.replace(/\./g,'').replace(',','.'));
+  const raw=inp.value.replace(/\s/g,'').replace(/\./g,'').replace(',','.');
+  const nv=parseFloat(raw);
   if(isNaN(nv)){buildDRE();return;}
   const old=PD[per][rowId];
-  if(nv===old){buildDRE();return;}
   PD[per][rowId]=nv;
-  // Save to SE (edits cache) and SX (custom cols) if applicable
   if(!SE[per])SE[per]={};
   SE[per][rowId]=nv;
-  if(SX[per]){SX[per][rowId]=nv;} // keep SX in sync for custom periods
-  // Save directly to Supabase
-  sbFetch('dre_dados',{
-    method:'POST',
-    prefer:'resolution=merge-duplicates',
-    body:JSON.stringify({periodo:per,campo:rowId,valor:nv})
-  }).catch(()=>{});
+  if(SX[per]) SX[per][rowId]=nv;
   localStorage.setItem('jr4_e',JSON.stringify(SE));
   localStorage.setItem('jr4_x',JSON.stringify(SX));
+  // Upsert: try PATCH first (update existing), then POST (insert new)
+  sbFetch(`dre_dados?periodo=eq.${encodeURIComponent(per)}&campo=eq.${encodeURIComponent(rowId)}`,{
+    method:'PATCH',
+    body:JSON.stringify({valor:nv})
+  }).then(r=>{
+    // If PATCH returned nothing (no rows), insert instead
+    return sbFetch('dre_dados',{
+      method:'POST',
+      prefer:'resolution=merge-duplicates',
+      body:JSON.stringify({periodo:per,campo:rowId,valor:nv})
+    });
+  }).catch(e=>console.warn('DRE save err:',e));
   recomputePct(per);
   if(PD[per]._month)recalcAcum();
   const lbl=DROWS.find(r=>r.id===rowId)?.label||rowId;
   pushH({type:'edit',user:CU.label,ts:ts(),icon:'✏️',period:per,lbl,oldV:fmtV(old),newV:fmtV(nv)});
-  buildKPI();buildDRE();toast(`${lbl} atualizado!`);
+  buildKPI();buildDRE();toast(`💾 ${lbl} salvo!`);
 }
 function focusNextCell(inp){
   const td=inp.closest('td');
@@ -3066,22 +3074,22 @@ function buildFC(){
 }
 
 function saveFCCell(li, semana, val){
-  if(!val&&val!==0)return;
-  const strVal=String(val||'');
-  const num=strVal.startsWith('=')?strVal:+strVal.replace(/\./g,'').replace(',','.')||0;
+  if(val===null||val===undefined||val==='')return;
+  const strVal=String(val);
+  const num=strVal.startsWith('=')?strVal:parseFloat(strVal.replace(/\./g,'').replace(',','.'))||0;
   FC.linhas[li].vals[semana]=num;
-  // Save immediately to Supabase
-  sbFetch('fluxo_caixa',{
-    method:'POST',
-    prefer:'resolution=merge-duplicates',
-    body:JSON.stringify({
-      linha_idx:li,
-      semana,
-      valor:strVal,
-      descricao:FC.linhas[li].desc||'',
-      tipo:FC.linhas[li].tipo||''
+  const body={linha_idx:li,semana,valor:strVal,descricao:FC.linhas[li].desc||'',tipo:FC.linhas[li].tipo||''};
+  // Upsert: PATCH if exists, POST if new
+  sbFetch(`fluxo_caixa?linha_idx=eq.${li}&semana=eq.${encodeURIComponent(semana)}`,{
+    method:'PATCH',
+    body:JSON.stringify({valor:strVal})
+  }).then(()=>
+    sbFetch('fluxo_caixa',{
+      method:'POST',
+      prefer:'resolution=merge-duplicates',
+      body:JSON.stringify(body)
     })
-  }).catch(e=>console.warn('FC save err:',e));
+  ).catch(e=>console.warn('FC save err:',e));
   buildFC();
   toast('💾 Salvo!');
 }
