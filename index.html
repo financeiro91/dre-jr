@@ -1601,7 +1601,10 @@ async function sbFetch(path, opts={}){
     ...(opts.headers||{})
   };
   if(opts.prefer) headers['Prefer']=opts.prefer;
-  if(opts.method==='POST') headers['Prefer']=(opts.prefer||'return=minimal');
+  if(opts.method==='POST'){
+    const base=opts.prefer||'';
+    headers['Prefer']=base?base:'return=minimal';
+  }
   const res = await fetch(`${SB_URL}/rest/v1/${path}`, {
     method: opts.method||'GET',
     body: opts.body||undefined,
@@ -2573,22 +2576,16 @@ function saveEditDRE(per,rowId,inp){
   if(SX[per]) SX[per][rowId]=nv;
   localStorage.setItem('jr4_e',JSON.stringify(SE));
   localStorage.setItem('jr4_x',JSON.stringify(SX));
-  // Upsert: try PATCH first (update existing), then POST (insert new)
-  sbFetch(`dre_dados?periodo=eq.${encodeURIComponent(per)}&campo=eq.${encodeURIComponent(rowId)}`,{
-    method:'PATCH',
-    body:JSON.stringify({valor:nv})
-  }).then(r=>{
-    // If PATCH returned nothing (no rows), insert instead
-    return sbFetch('dre_dados',{
-      method:'POST',
-      prefer:'resolution=merge-duplicates',
-      body:JSON.stringify({periodo:per,campo:rowId,valor:nv})
-    });
+  // Upsert: POST com on-conflict do Supabase (único request)
+  sbFetch('dre_dados',{
+    method:'POST',
+    prefer:'resolution=merge-duplicates',
+    body:JSON.stringify({periodo:per,campo:rowId,valor:nv})
   }).catch(e=>console.warn('DRE save err:',e));
   recomputePct(per);
   if(PD[per]._month)recalcAcum();
   const lbl=DROWS.find(r=>r.id===rowId)?.label||rowId;
-  pushH({type:'edit',user:CU.label,ts:ts(),icon:'✏️',period:per,lbl,oldV:fmtV(old),newV:fmtV(nv)});
+  pushH({type:'edit',user:CU?.label||'—',ts:ts(),icon:'✏️',period:per,lbl,oldV:fmtV(old),newV:fmtV(nv)});
   buildKPI();buildDRE();toast(`💾 ${lbl} salvo!`);
 }
 function focusNextCell(inp){
