@@ -2072,6 +2072,17 @@ function openAddRow(tab){
 // Renumber PLANO sequentially after any insert/delete
 function renumberPlano(){
   PLANO.forEach((r,i)=>{ r[0]=i+1; });
+  // Save all rows to Supabase after renumbering
+  PLANO.forEach(r=>{
+    sbFetch('plano_acao',{
+      method:'POST',
+      prefer:'resolution=merge-duplicates',
+      body:JSON.stringify({
+        numero:r[0],acao:r[1],responsavel:r[2],
+        inicio:r[3],termino:r[4],status:r[5],observacao:r[6]
+      })
+    }).catch(e=>console.warn('plano renumber save err:',e));
+  });
 }
 
 function confirmNewPlanoRow(){
@@ -2080,7 +2091,6 @@ function confirmNewPlanoRow(){
   const resp=document.getElementById('pa-resp').value.trim()||'—';
   const status=document.getElementById('pa-status').value;
   const obs=document.getElementById('pa-obs').value.trim();
-  // Format dates dd/mm/yyyy or —
   const fmtDate=id=>{
     const v=document.getElementById(id).value;
     if(!v)return'—';
@@ -2090,13 +2100,12 @@ function confirmNewPlanoRow(){
   const termino=fmtDate('pa-termino');
   const aft=parseInt(document.getElementById('pa-after').value);
   const insertAt=aft<0?0:aft+1;
-  // Insert with placeholder number 0 — renumber will fix it
   PLANO.splice(insertAt,0,[0,acao,resp,inicio,termino,status,obs]);
-  renumberPlano();
+  renumberPlano(); // saves all to Supabase
   pushH({type:'newrow',user:CU.label,ts:ts(),icon:'➕',row:acao.slice(0,60),tab:'plano'});
   cM('m-plano-row');
   buildPlano(PLANO);
-  toast(`Ação nº ${PLANO[insertAt][0]} adicionada!`);
+  toast(`Ação nº ${PLANO[insertAt][0]} adicionada e salva!`);
 }
 
 function confirmNewRow(){
