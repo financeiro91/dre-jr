@@ -1533,10 +1533,31 @@ async function loadBalFromSupabase(){
     const rows=await sbFetch('balanco_dados?select=*');
     if(!rows||!rows.length)return;
     const byId={};BAL_ROWS.forEach(r=>byId[r.id]=r);
+
+    // Restore BAL_COLS if saved
+    const colsRow=rows.find(r=>r.row_id==='__cols__'&&r.col_idx===0);
+    if(colsRow){
+      try{
+        const saved=JSON.parse(colsRow.valor);
+        if(Array.isArray(saved)&&saved.length>1){
+          BAL_COLS=saved;
+          // Ensure all rows have enough columns
+          BAL_ROWS.forEach(r=>{
+            while(r.v.length<BAL_COLS.length-1)r.v.push('0');
+          });
+        }
+      }catch(e){console.warn('BAL_COLS parse err:',e);}
+    }
+
+    // Restore cell values
     rows.forEach(({row_id,col_idx,valor})=>{
+      if(row_id==='__cols__')return;
       const r=byId[row_id];
-      if(r&&r.t==='v') r.v[col_idx]=valor;
+      if(r&&r.t==='v'&&col_idx<BAL_COLS.length-1){
+        r.v[col_idx]=valor;
+      }
     });
+    buildBal();
   }catch(e){console.warn('loadBal error:',e);}
 }
 
@@ -2285,8 +2306,32 @@ function confirmAddColBal(){
   const cfi=cf?BAL_COLS.indexOf(cf)-1:-1;
   BAL_COLS.push(name);
   BAL_ROWS.forEach(r=>{r.v.push(cfi>=0&&r.v[cfi]!==undefined?r.v[cfi]:"0");});
+  // Save BAL_COLS list and all new col values to Supabase
+  saveBalToSupabase();
   pushH({type:"newcol",user:CU.label,ts:ts(),icon:"➕",col:name,from:cf||"em branco"});
-  cM("m-col");buildBal();toast("Coluna \""+name+"\" adicionada!");
+  cM("m-col");buildBal();toast("Coluna \""+name+"\" adicionada e salva!");
+}
+
+function saveBalToSupabase(){
+  // Save BAL_COLS as special row
+  sbFetch('balanco_dados',{
+    method:'POST',
+    prefer:'resolution=merge-duplicates',
+    body:JSON.stringify({row_id:'__cols__',col_idx:0,valor:JSON.stringify(BAL_COLS)})
+  }).catch(()=>{});
+  // Save all editable values
+  const ci=BAL_COLS.length-2; // last real column index (0-based)
+  BAL_ROWS.forEach(r=>{
+    if(r.t!=='v')return;
+    r.v.forEach((val,idx)=>{
+      if(!val||val==='0')return;
+      sbFetch('balanco_dados',{
+        method:'POST',
+        prefer:'resolution=merge-duplicates',
+        body:JSON.stringify({row_id:r.id,col_idx:idx,valor:String(val)})
+      }).catch(()=>{});
+    });
+  });
 }
 
 // ══ PLANO ══
