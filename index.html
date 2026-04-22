@@ -952,8 +952,10 @@ async function sbFetch(path, opts={}){
     'Content-Type': 'application/json',
     ...(opts.headers||{})
   };
-  if(opts.prefer) headers['Prefer']=opts.prefer;
-  if(opts.method==='POST') headers['Prefer']=(opts.prefer||'return=minimal');
+  if(opts.method==='POST') headers['Prefer']=opts.prefer||'return=minimal';
+  if(opts.method==='PATCH') headers['Prefer']=opts.prefer||'return=minimal';
+  if(opts.method==='DELETE') headers['Prefer']='return=minimal';
+  else if(opts.prefer) headers['Prefer']=opts.prefer;
   const res = await fetch(`${SB_URL}/rest/v1/${path}`, {
     method: opts.method||'GET',
     body: opts.body||undefined,
@@ -1473,8 +1475,9 @@ async function loadDREFromSupabase(){
       }
     });
 
-    // Restore custom periods with correct metadata
+    // Restore custom periods with correct metadata — skip deleted cols
     Object.keys(customPeriods).forEach(periodo=>{
+      if(DELETED_COLS.includes(periodo)) return; // skip deleted columns
       const data=customPeriods[periodo];
       const b={};
       DROWS.forEach(r=>{if(r.type!=='blank')b[r.id]=0;});
@@ -1809,25 +1812,33 @@ function selPer(el,p){
   document.getElementById('btn-del').style.display=canDel?'':'none';
   buildKPI();buildDRE();
 }
+// Blacklist of deleted custom columns — persists across sessions
+let DELETED_COLS = JSON.parse(localStorage.getItem('jr4_deleted_cols')||'[]');
+
 function delPer(){
   if(PROTECTED_COLS.has(activePer)){
-    toast(`"${activePer}" é uma coluna fixa da planilha e não pode ser excluída.`,'error');
+    toast(`"${activePer}" é uma coluna fixa e não pode ser excluída.`,'error');
     return;
   }
   if(!confirm(`Excluir a coluna "${activePer}"?\n\nEsta ação não pode ser desfeita.`))return;
   const n=activePer;
-  // Delete from Supabase FIRST
-  sbFetch(`dre_dados?periodo=eq.${encodeURIComponent(n)}`,{
-    method:'DELETE'
-  }).then(()=>{
-    console.log(`✅ Coluna "${n}" excluída do Supabase`);
-  }).catch(e=>console.warn('delPer Supabase err:',e));
-  // Delete locally
+
+  // 1. Add to blacklist FIRST so it never comes back
+  if(!DELETED_COLS.includes(n)) DELETED_COLS.push(n);
+  localStorage.setItem('jr4_deleted_cols', JSON.stringify(DELETED_COLS));
+
+  // 2. Delete from Supabase
+  sbFetch(`dre_dados?periodo=eq.${encodeURIComponent(n)}`,{method:'DELETE'})
+    .then(()=>console.log(`✅ "${n}" excluída do Supabase`))
+    .catch(e=>console.warn('delPer err:',e));
+
+  // 3. Delete locally
   delete PD[n];
   if(SX[n]) delete SX[n];
   if(SE[n]) delete SE[n];
   localStorage.setItem('jr4_x',JSON.stringify(SX));
   localStorage.setItem('jr4_e',JSON.stringify(SE));
+
   recalcAcum();
   pushH({type:'delcol',user:CU.label,ts:ts(),icon:'🗑️',col:n});
   activePer=Object.keys(PD).slice(-1)[0];
@@ -1990,6 +2001,9 @@ function confirmNewMonth(){
   b._t='real'; b._month=mes;
   PD[rk]=b;
   SX[rk]=JSON.parse(JSON.stringify(b));
+  // Remove from deleted blacklist if it was previously deleted
+  DELETED_COLS=DELETED_COLS.filter(c=>c!==rk);
+  localStorage.setItem('jr4_deleted_cols',JSON.stringify(DELETED_COLS));
   saveX(); recalcAcum();
   pushH({type:'newcol',user:CU.label,ts:ts(),icon:'➕',col:rk,from:cf||'em branco'});
   activePer=rk; cM('m-month'); buildPerBtns(); buildKPI(); buildDRE();
@@ -3048,19 +3062,19 @@ function buildFC(){
     }).join('')}
     ${editFC&&CU?.role!=='viewer'?'<th style="width:30px"></th>':''}
   </tr>
-  <tr style="background:#1a2e1a">
-    <td colspan="2" style="color:var(--jr-gold);font-weight:700;font-size:.7rem;padding:4px 8px">% ATENDIMENTO</td>
-    ${visSemanasAll.map(s=>FC_HC.includes(s)?'<td style="opacity:.3;font-size:.6rem;text-align:center">—</td>':`<td style="text-align:right;color:var(--jr-gold);font-size:.72rem;font-weight:700;padding:4px 6px">${atend[s]?(atend[s]*100).toFixed(1)+'%':'—'}</td>`).join('')}
+  <tr style="background:#8B1A22">
+    <td colspan="2" style="color:#C9A227;font-weight:700;font-size:.75rem;padding:6px 10px;letter-spacing:.04em">% ATENDIMENTO</td>
+    ${visSemanasAll.map(s=>FC_HC.includes(s)?'<td style="opacity:.3;font-size:.6rem;text-align:center">—</td>':`<td style="text-align:right;color:#ffffff;font-size:.75rem;font-weight:700;padding:6px 8px">${atend[s]?(atend[s]*100).toFixed(1)+'%':'—'}</td>`).join('')}
     ${editFC?'<td></td>':''}
   </tr>
-  <tr style="background:#0d1f0d">
-    <td colspan="2" style="color:#5EAD62;font-weight:700;font-size:.7rem;padding:4px 8px">FC PLANEJADO (Acumulado)</td>
-    ${visSemanasAll.map(s=>FC_HC.includes(s)?'<td style="opacity:.3;text-align:center">—</td>':`<td style="text-align:right;color:${(plan[s]||0)>=0?'#5EAD62':'var(--neg)'};font-size:.72rem;font-weight:700;padding:4px 6px">${fmtV(plan[s]||0)}</td>`).join('')}
+  <tr style="background:#6B1219">
+    <td colspan="2" style="color:#C9A227;font-weight:700;font-size:.75rem;padding:6px 10px;letter-spacing:.04em">FC PLANEJADO (Acumulado)</td>
+    ${visSemanasAll.map(s=>FC_HC.includes(s)?'<td style="opacity:.3;text-align:center">—</td>':`<td style="text-align:right;color:${(plan[s]||0)>=0?'#ffffff':'#FFAAAA'};font-size:.75rem;font-weight:700;padding:6px 8px">${fmtV(plan[s]||0)}</td>`).join('')}
     ${editFC?'<td></td>':''}
   </tr>
-  <tr style="background:#0d1f0d">
-    <td colspan="2" style="color:#aaa;font-size:.7rem;padding:4px 8px">FC REALIZADO</td>
-    ${visSemanasAll.map(s=>FC_HC.includes(s)?'<td style="opacity:.3;text-align:center">—</td>':`<td style="text-align:right;color:#aaa;font-size:.72rem;padding:4px 6px">${FC.realizado[s]?fmtV(fcResolve(FC.realizado[s])):'—'}</td>`).join('')}
+  <tr style="background:#4A0D13">
+    <td colspan="2" style="color:#C9A227;font-weight:600;font-size:.75rem;padding:6px 10px;letter-spacing:.04em">FC REALIZADO</td>
+    ${visSemanasAll.map(s=>FC_HC.includes(s)?'<td style="opacity:.3;text-align:center">—</td>':`<td style="text-align:right;color:#ffffff;font-size:.75rem;padding:6px 8px">${FC.realizado[s]?fmtV(fcResolve(FC.realizado[s])):'—'}</td>`).join('')}
     ${editFC?'<td></td>':''}
   </tr>`;
 
