@@ -1692,7 +1692,7 @@ function swTab(el,id){
   if(id==='t-pending')renderPendingTab();
   if(id==='t-graf')buildGraficos();
   if(id==='t-dash')buildDashboard();
-  if(id==='t-fc'){loadFCFromSupabase().then(()=>buildFC());}
+  if(id==='t-fc'){loadFCFromSupabase().then(()=>{fcCalc();buildFC();});}
 }
 
 // ══ INIT ══
@@ -1816,16 +1816,23 @@ function delPer(){
   }
   if(!confirm(`Excluir a coluna "${activePer}"?\n\nEsta ação não pode ser desfeita.`))return;
   const n=activePer;
+  // Delete from Supabase FIRST
+  sbFetch(`dre_dados?periodo=eq.${encodeURIComponent(n)}`,{
+    method:'DELETE'
+  }).then(()=>{
+    console.log(`✅ Coluna "${n}" excluída do Supabase`);
+  }).catch(e=>console.warn('delPer Supabase err:',e));
+  // Delete locally
   delete PD[n];
   if(SX[n]) delete SX[n];
   if(SE[n]) delete SE[n];
-  saveX();save();
+  localStorage.setItem('jr4_x',JSON.stringify(SX));
+  localStorage.setItem('jr4_e',JSON.stringify(SE));
   recalcAcum();
   pushH({type:'delcol',user:CU.label,ts:ts(),icon:'🗑️',col:n});
-  // Select last available column
   activePer=Object.keys(PD).slice(-1)[0];
   buildPerBtns();buildKPI();buildDRE();
-  toast(`Coluna "${n}" excluída.`);
+  toast(`Coluna "${n}" excluída permanentemente.`);
 }
 // ══ KPI ══
 function buildKPI(){
@@ -3224,21 +3231,29 @@ async function loadFCFromSupabase(){
     const rows=await sbFetch('fluxo_caixa?select=*&order=linha_idx.asc');
     if(!rows||!rows.length)return;
 
-    // Restore semanas list if saved
+    // 1. Restore semanas list
     const semanasRow=rows.find(r=>r.linha_idx===-1&&r.semana==='__semanas__');
     if(semanasRow){
       try{
         const saved=JSON.parse(semanasRow.valor);
-        if(Array.isArray(saved)&&saved.length>0) FC.semanas=saved;
-      }catch{}
+        if(Array.isArray(saved)&&saved.length>0){
+          // Merge: add any saved semanas not already in FC.semanas
+          saved.forEach(s=>{ if(!FC.semanas.includes(s)) FC.semanas.push(s); });
+          // Preserve order from saved
+          FC.semanas=saved.filter(s=>true);
+        }
+      }catch(e){console.warn('FC semanas parse err:',e);}
     }
 
-    // Restore cell values — skip metadata rows
+    // 2. Restore cell values — convert string to number
     rows.forEach(r=>{
-      if(r.linha_idx<0)return; // skip metadata
-      if(r.semana==='__meta__')return; // skip line metadata
-      if(r.linha_idx>=0&&r.linha_idx<FC.linhas.length){
-        FC.linhas[r.linha_idx].vals[r.semana]=r.valor;
+      if(r.linha_idx<0)return;
+      if(r.semana==='__meta__')return;
+      if(r.linha_idx<FC.linhas.length){
+        const v=r.valor;
+        // Convert to number if possible, keep formula strings
+        const num=(v&&v.startsWith&&v.startsWith('='))?v:parseFloat(String(v).replace(/\./g,'').replace(',','.'));
+        FC.linhas[r.linha_idx].vals[r.semana]=isNaN(num)?+v||0:num;
       }
     });
   }catch(e){console.warn('loadFC error:',e);}
@@ -3246,6 +3261,7 @@ async function loadFCFromSupabase(){
 
 // Load FC on startup silently
 loadFCFromSupabase().then(()=>{
+  fcCalc();
   const tab=document.getElementById('t-fc');
   if(tab&&tab.style.display!=='none')buildFC();
 });
