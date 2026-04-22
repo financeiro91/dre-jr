@@ -240,6 +240,10 @@ select.sel:focus{outline:none;border-color:var(--jr-gold);}
 }
 .tbtn:hover{border-color:var(--jr-gold);color:var(--jr-red);}
 .tbtn.active{background:#FFF8E1;border-color:var(--jr-gold);color:var(--jr-gold3);}
+.view-switch{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px 0;}
+body.mode-executivo .operational-only{display:none !important;}
+body.mode-operacional .executive-only{display:none !important;}
+.exec-alert{background:var(--jr-white);border:1px solid var(--jr-gelo3);border-left:4px solid var(--jr-gold);border-radius:3px;padding:12px 14px;font-size:.8rem;color:var(--jr-dark);}
 
 /* ── MAIN TABLE ────────────────────────────────────────────────── */
 .twrap{overflow-x:auto;border:1px solid var(--jr-gelo3);border-radius:3px;box-shadow:0 1px 6px rgba(0,0,0,.06);}
@@ -585,7 +589,7 @@ tbody tr:last-child td{border-bottom:none;}
       <div class="phdr">
         <div class="ptitle">Dashboard Executivo<small>Visão geral dos principais indicadores — <span id="dash-periodo">Fev/26 Real</span></small></div>
         <div class="phdr-actions">
-          <select class="sel" id="dash-per-sel" onchange="buildDashboard(this.value)"><option value="Plano 2022">Plano 2022</option><option value="Ano 2022">Ano 2022</option><option value="Ano 2023 PE Plano">Ano 2023 PE Plano</option><option value="Ano 2023 Real">Ano 2023 Real</option><option value="Ano 2024">Ano 2024</option><option value="Ano 2025 PE Plano">Ano 2025 PE Plano</option><option value="Ano 2025 Real">Ano 2025 Real</option><option value="PLANO 2026">PLANO 2026</option><option value="Nova Meta G4">Nova Meta G4</option><option value="Acum Plano 2026">Acum Plano 2026</option><option value="Nova Meta Mês">Nova Meta Mês</option><option value="Acum 2026 Real">Acum 2026 Real</option><option value="Jan/26 Real">Jan/26 Real</option><option value="Fev/26 Real" selected="">Fev/26 Real</option><option value="Mar/26 Real Real">Mar/26 Real Real</option></select>
+          <select class="sel" id="dash-per-sel" onchange="buildDashboard(this.value)"><option value="Plano 2022">Plano 2022</option><option value="Ano 2022">Ano 2022</option><option value="Ano 2023 PE Plano">Ano 2023 PE Plano</option><option value="Ano 2023 Real">Ano 2023 Real</option><option value="Ano 2024">Ano 2024</option><option value="Ano 2025 PE Plano">Ano 2025 PE Plano</option><option value="Ano 2025 Real">Ano 2025 Real</option><option value="PLANO 2026">PLANO 2026</option><option value="Nova Meta G4">Nova Meta G4</option><option value="Acum Plano 2026">Acum Plano 2026</option><option value="Nova Meta Mês">Nova Meta Mês</option><option value="Acum 2026 Real">Acum 2026 Real</option><option value="Jan/26 Real">Jan/26 Real</option><option value="Fev/26 Real" selected="">Fev/26 Real</option><option value="Mar/26 Real">Mar/26 Real</option></select>
         </div>
       </div>
       <!-- KPI Cards grandes -->
@@ -817,6 +821,10 @@ tbody tr:last-child td{border-bottom:none;}
 
     <!-- DRE -->
     <div id="t-dre" style="display: block;">
+      <div class="view-switch" id="view-mode-bar">
+        <button class="tbtn active" onclick="setViewMode(this,'operacional')">Modo Operacional</button>
+        <button class="tbtn" onclick="setViewMode(this,'executivo')">Modo Executivo</button>
+      </div>
       <div id="kpi-area" class="kgrid"><div class="kcard k-gold"><div class="klbl">Faturamento</div><div class="kval">R$ 1.99M</div><div class="ksub">Fev/26 Real</div></div><div class="kcard k-gold"><div class="klbl">Receita Líquida</div><div class="kval">R$ 1.79M</div><div class="ksub">89,8% do fat.</div></div><div class="kcard k-red"><div class="klbl">Margem Contribuição</div><div class="kval">-4,5%</div><div class="ksub">R$ -90k</div><div class="kbadge b-red">▼ Abaixo</div></div><div class="kcard k-red"><div class="klbl">EBITDA</div><div class="kval">-28,1%</div><div class="ksub">R$ -560k</div><div class="kbadge b-red">▼ Negativo</div></div><div class="kcard k-red"><div class="klbl">% CSV Real</div><div class="kval">100,3%</div><div class="ksub">Meta: 72%</div><div class="kbadge b-red">✘ Acima</div></div><div class="kcard k-gold"><div class="klbl">% Impostos</div><div class="kval">10,2%</div><div class="ksub">sobre faturamento</div></div></div>
       <div class="phdr">
         <div class="ptitle">Demonstração do Resultado do Exercício<small>JR Santa Fé Pavimentação e Construções Ltda · CNPJ: 65.472.078/0001-54 · Rua dos Bandeirantes, nº 1220-A – Distrito Industrial V · CEP 15.779-050 – Estância Turística de Santa Fé do Sul/SP</small></div>
@@ -827,7 +835,11 @@ tbody tr:last-child td{border-bottom:none;}
           <button class="tbtn" onclick="promptSaveVersion()" title="Salvar snapshot desta versão">📸 Salvar versão</button>
         </div>
       </div>
-      <div class="period-row" id="per-btns"><div class="perbtn p-plan p-hidden" draggable="true" data-col="Plano 2022" onclick="selPer(this,&#39;Plano 2022&#39;)" ondragstart="onColDragStart(event,&#39;Plano 2022&#39;)" ondragover="onColDragOver(event)" ondragleave="onColDragLeave(event)" ondrop="onColDrop(event,&#39;Plano 2022&#39;)" ondragend="onColDragEnd(event)">
+      <div id="dre-executive" class="executive-only" style="display:none;margin-bottom:16px">
+        <div id="dre-exec-kpis" class="kgrid"></div>
+        <div id="dre-exec-alerts" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px"></div>
+      </div>
+      <div class="period-row operational-only" id="per-btns"><div class="perbtn p-plan p-hidden" draggable="true" data-col="Plano 2022" onclick="selPer(this,&#39;Plano 2022&#39;)" ondragstart="onColDragStart(event,&#39;Plano 2022&#39;)" ondragover="onColDragOver(event)" ondragleave="onColDragLeave(event)" ondrop="onColDrop(event,&#39;Plano 2022&#39;)" ondragend="onColDragEnd(event)">
       <span style="cursor:grab;margin-right:4px;opacity:.4;font-size:.7rem">⠿</span>Plano 2022<button class="hide-x" onclick="event.stopPropagation();toggleHide(&#39;Plano 2022&#39;)" title="Mostrar">👁</button>
     </div><div class="perbtn  p-hidden" draggable="true" data-col="Ano 2022" onclick="selPer(this,&#39;Ano 2022&#39;)" ondragstart="onColDragStart(event,&#39;Ano 2022&#39;)" ondragover="onColDragOver(event)" ondragleave="onColDragLeave(event)" ondrop="onColDrop(event,&#39;Ano 2022&#39;)" ondragend="onColDragEnd(event)">
       <span style="cursor:grab;margin-right:4px;opacity:.4;font-size:.7rem">⠿</span>Ano 2022<button class="hide-x" onclick="event.stopPropagation();toggleHide(&#39;Ano 2022&#39;)" title="Mostrar">👁</button>
@@ -855,11 +867,11 @@ tbody tr:last-child td{border-bottom:none;}
       <span style="cursor:grab;margin-right:4px;opacity:.4;font-size:.7rem">⠿</span>Jan/26 Real<button class="hide-x" onclick="event.stopPropagation();toggleHide(&#39;Jan/26 Real&#39;)" title="Ocultar">×</button>
     </div><div class="perbtn   active" draggable="true" data-col="Fev/26 Real" onclick="selPer(this,&#39;Fev/26 Real&#39;)" ondragstart="onColDragStart(event,&#39;Fev/26 Real&#39;)" ondragover="onColDragOver(event)" ondragleave="onColDragLeave(event)" ondrop="onColDrop(event,&#39;Fev/26 Real&#39;)" ondragend="onColDragEnd(event)">
       <span style="cursor:grab;margin-right:4px;opacity:.4;font-size:.7rem">⠿</span>Fev/26 Real<button class="hide-x" onclick="event.stopPropagation();toggleHide(&#39;Fev/26 Real&#39;)" title="Ocultar">×</button>
-    </div><div class="perbtn  " draggable="true" data-col="Mar/26 Real Real" onclick="selPer(this,&#39;Mar/26 Real Real&#39;)" ondragstart="onColDragStart(event,&#39;Mar/26 Real Real&#39;)" ondragover="onColDragOver(event)" ondragleave="onColDragLeave(event)" ondrop="onColDrop(event,&#39;Mar/26 Real Real&#39;)" ondragend="onColDragEnd(event)">
-      <span style="cursor:grab;margin-right:4px;opacity:.4;font-size:.7rem">⠿</span>Mar/26 Real Real<button class="hide-x" onclick="event.stopPropagation();toggleHide(&#39;Mar/26 Real Real&#39;)" title="Ocultar">×</button>
+    </div><div class="perbtn  " draggable="true" data-col="Mar/26 Real" onclick="selPer(this,&#39;Mar/26 Real&#39;)" ondragstart="onColDragStart(event,&#39;Mar/26 Real&#39;)" ondragover="onColDragOver(event)" ondragleave="onColDragLeave(event)" ondrop="onColDrop(event,&#39;Mar/26 Real&#39;)" ondragend="onColDragEnd(event)">
+      <span style="cursor:grab;margin-right:4px;opacity:.4;font-size:.7rem">⠿</span>Mar/26 Real<button class="hide-x" onclick="event.stopPropagation();toggleHide(&#39;Mar/26 Real&#39;)" title="Ocultar">×</button>
     </div></div>
       <div class="hbar" id="hbar" style="display: flex;">Ocultas: <span id="hnames"><span class="unhide" onclick="toggleHide(&#39;Plano 2022&#39;)">👁 Plano 2022</span> <span class="unhide" onclick="toggleHide(&#39;Ano 2022&#39;)">👁 Ano 2022</span> <span class="unhide" onclick="toggleHide(&#39;Ano 2023 PE Plano&#39;)">👁 Ano 2023 PE Plano</span> <span class="unhide" onclick="toggleHide(&#39;Ano 2023 Real&#39;)">👁 Ano 2023 Real</span> <span class="unhide" onclick="toggleHide(&#39;Ano 2024&#39;)">👁 Ano 2024</span> <span class="unhide" onclick="toggleHide(&#39;Ano 2025 PE Plano&#39;)">👁 Ano 2025 PE Plano</span> <span class="unhide" onclick="toggleHide(&#39;Ano 2025 Real&#39;)">👁 Ano 2025 Real</span> <span class="unhide" onclick="toggleHide(&#39;Nova Meta Mês&#39;)">👁 Nova Meta Mês</span> <span class="unhide" onclick="toggleHide(&#39;PLANO 2026&#39;)">👁 PLANO 2026</span></span></div>
-      <div class="fbar">
+      <div class="fbar operational-only">
         <input class="srch" type="text" placeholder="Filtrar indicador..." oninput="filterDRE(this.value)">
         <select class="sel" id="dre-year-filter" onchange="filterDREByYear(this.value)" title="Filtrar por ano/tipo">
           <option value="all">Mostrar todas</option>
@@ -874,7 +886,7 @@ tbody tr:last-child td{border-bottom:none;}
         </select>
         <button class="tbtn active" id="edit-btn" onclick="toggleEdit()">🔒 Sair da Edição</button>
       </div>
-      <div class="twrap"><table><thead id="dre-h"><tr><th>Indicador / Linha</th><th class="th-meta">Nova Meta G4</th><th class="th-acum">Acum Plano 2026</th><th class="th-acum">Acum 2026 Real</th><th class="th-real">Jan/26 Real</th><th class="th-real">Fev/26 Real</th><th class="th-real">Mar/26 Real Real</th></tr></thead><tbody id="dre-b"><tr class="r-total" data-lbl="faturamento total (medição)"><td>Faturamento Total (Medição)</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;fat&#39;)"><span class="vpos">55.502.111,04</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;fat&#39;)"><span class="vpos">13.875.527,76</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;fat&#39;)"><span class="vpos">196.168.265,52</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;fat&#39;)"><span class="vpos">4.625.175,92</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;fat&#39;)"><span class="vpos">1.989.100,60</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;fat&#39;)"><span class="vpos">189.553.989,00</span></td></tr><tr class="" data-lbl="impostos"><td>Impostos</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;imp&#39;)"><span class="vpos">5.550.211,10</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;imp&#39;)"><span class="vpos">1.387.552,77</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;imp&#39;)"><span class="vpos">16.663.364,56</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;imp&#39;)"><span class="vpos">479.801,83</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;imp&#39;)"><span class="vpos">203.380,73</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;imp&#39;)"><span class="vpos">15.980.182,00</span></td></tr><tr class="r-pct" data-lbl="% impostos"><td>% Impostos</td><td class="">10,0%</td><td class="">10,0%</td><td class="">8,5%</td><td class="">10,4%</td><td class="">10,2%</td><td class="">8,4%</td></tr><tr class="" data-lbl="devoluções/acordos"><td>Devoluções/Acordos</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;dev&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;dev&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;dev&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;dev&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;dev&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;dev&#39;)"><span class="">-</span></td></tr><tr class="r-pct" data-lbl="% devoluções/vale compra"><td>% Devoluções/Vale Compra</td><td class="">-</td><td class="">-</td><td class="">-</td><td class="">-</td><td class="">-</td><td class="">-</td></tr><tr class="" data-lbl="financeiro vendas"><td>Financeiro Vendas</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;finv&#39;)"><span class="vpos">610.523,22</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;finv&#39;)"><span class="vpos">152.630,82</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;finv&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;finv&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;finv&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;finv&#39;)"><span class="">-</span></td></tr><tr class="r-pct" data-lbl="% custo financeiro"><td>% custo financeiro</td><td class="">1,1%</td><td class="">1,1%</td><td class="">-</td><td class="">-</td><td class="">-</td><td class="">-</td></tr><tr class="r-total" data-lbl="receita líquida"><td>Receita Líquida</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;rl&#39;)"><span class="vpos">49.341.376,72</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;rl&#39;)"><span class="vpos">12.335.344,17</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;rl&#39;)"><span class="vpos">179.504.900,96</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;rl&#39;)"><span class="vpos">4.145.374,09</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;rl&#39;)"><span class="vpos">1.785.719,87</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;rl&#39;)"><span class="vpos">173.573.807,00</span></td></tr><tr class="r-pct" data-lbl="% faturamento"><td>% Faturamento</td><td class="">88,9%</td><td class="">88,9%</td><td class="">91,5%</td><td class="">89,6%</td><td class="">89,8%</td><td class="">91,6%</td></tr><tr class="" data-lbl="csv (apropriado)"><td>CSV (Apropriado)</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;csv&#39;)"><span class="vpos">39.406.498,84</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;csv&#39;)"><span class="vpos">9.851.624,70</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;csv&#39;)"><span class="vpos">193.665.607,68</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;csv&#39;)"><span class="vpos">3.346.283,05</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;csv&#39;)"><span class="vpos">1.994.461,63</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;csv&#39;)"><span class="vpos">188.324.863,00</span></td></tr><tr class="r-pct" data-lbl="% csv"><td>% CSV</td><td class="">71,0%</td><td class="">71,0%</td><td class="">98,7%</td><td class="">72,3%</td><td class="">100,3%</td><td class="">99,4%</td></tr><tr class="" data-lbl="saldo usina/frota"><td>Saldo Usina/Frota</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;uf&#39;)"><span class="vpos">1.110.042,22</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;uf&#39;)"><span class="vpos">277.510,56</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;uf&#39;)"><span class="vpos">20.599,02</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;uf&#39;)"><span class="vpos">139.676,02</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;uf&#39;)"><span class="vneg">(119.077,00)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;uf&#39;)"><span class="">-</span></td></tr><tr class="r-pct" data-lbl="% csv"><td>% CSV</td><td class="">2,0%</td><td class="">2,0%</td><td class="">0,0%</td><td class="">3,0%</td><td class="">-6,0%</td><td class="">-</td></tr><tr class="r-pct" data-lbl="% csv real apropriado + usina/frota"><td>% CSV Real Apropriado + Usina/Frota</td><td class="">73,0%</td><td class="">73,0%</td><td class="">98,7%</td><td class="">75,4%</td><td class="">94,3%</td><td class="">99,4%</td></tr><tr class="r-total" data-lbl="margem de contribuição"><td>Margem de Contribuição</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;mc&#39;)"><span class="vpos">8.824.835,66</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;mc&#39;)"><span class="vpos">2.206.208,91</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;mc&#39;)"><span class="vneg">(14.181.305,74)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;mc&#39;)"><span class="vpos">659.415,02</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;mc&#39;)"><span class="vneg">(89.664,76)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;mc&#39;)"><span class="vneg">(14.751.056,00)</span></td></tr><tr class="r-pct" data-lbl="% mc"><td>% MC</td><td class="">15,9%</td><td class="">15,9%</td><td class="">-7,2%</td><td class="">14,3%</td><td class="">-4,5%</td><td class="">-7,8%</td></tr><tr class="" data-lbl="pessoal"><td>Pessoal</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;pes&#39;)"><span class="vpos">2.109.200,00</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;pes&#39;)"><span class="vpos">527.300,01</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;pes&#39;)"><span class="vpos">339.267,11</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;pes&#39;)"><span class="vpos">167.799,85</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;pes&#39;)"><span class="vpos">171.467,26</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;pes&#39;)"><span class="">-</span></td></tr><tr class="r-pct" data-lbl="% faturamento"><td>% Faturamento</td><td class="">3,8%</td><td class="">3,8%</td><td class="">0,2%</td><td class="">3,6%</td><td class="">8,6%</td><td class="">-</td></tr><tr class="" data-lbl="despesas administrativas"><td>Despesas Administrativas</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;adm&#39;)"><span class="vpos">2.185.048,00</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;adm&#39;)"><span class="vpos">546.261,99</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;adm&#39;)"><span class="vpos">506.703,72</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;adm&#39;)"><span class="vpos">208.169,53</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;adm&#39;)"><span class="vpos">298.534,19</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;adm&#39;)"><span class="">-</span></td></tr><tr class="r-pct" data-lbl="% faturamento"><td>% Faturamento</td><td class="">3,9%</td><td class="">3,9%</td><td class="">0,3%</td><td class="">4,5%</td><td class="">15,0%</td><td class="">-</td></tr><tr class="" data-lbl="depreciação e amort"><td>Depreciação e Amort</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;dep&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;dep&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;dep&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;dep&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;dep&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;dep&#39;)"><span class="">-</span></td></tr><tr class="r-total" data-lbl="resultado ebitda"><td>Resultado EBITDA</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;ebt&#39;)"><span class="vpos">4.530.587,66</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;ebt&#39;)"><span class="vpos">1.132.646,91</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;ebt&#39;)"><span class="vneg">(15.027.276,57)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;ebt&#39;)"><span class="vpos">283.445,64</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;ebt&#39;)"><span class="vneg">(559.666,21)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;ebt&#39;)"><span class="vneg">(14.751.056,00)</span></td></tr><tr class="r-pct" data-lbl="% faturamento"><td>% Faturamento</td><td class="">8,2%</td><td class="">8,2%</td><td class="">-7,7%</td><td class="">6,1%</td><td class="">-28,1%</td><td class="">-7,8%</td></tr><tr class="" data-lbl="resultado financeiro"><td>Resultado Financeiro</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;rfin&#39;)"><span class="vpos">2.977.000,00</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;rfin&#39;)"><span class="vpos">744.249,99</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;rfin&#39;)"><span class="vpos">319.874,15</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;rfin&#39;)"><span class="vpos">152.473,01</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;rfin&#39;)"><span class="vpos">167.401,14</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;rfin&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="csll + ir"><td>CSLL + IR</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;csir&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;csir&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;csir&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;csir&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;csir&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;csir&#39;)"><span class="">-</span></td></tr><tr class="r-total" data-lbl="resultado líquido"><td>Resultado Líquido</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;rliq&#39;)"><span class="vpos">1.553.587,66</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;rliq&#39;)"><span class="vpos">388.396,92</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;rliq&#39;)"><span class="vneg">(15.347.150,72)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;rliq&#39;)"><span class="vpos">130.972,63</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;rliq&#39;)"><span class="vneg">(727.067,35)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;rliq&#39;)"><span class="vneg">(14.751.056,00)</span></td></tr><tr class="r-pct" data-lbl="% faturamento"><td>% Faturamento</td><td class="">2,8%</td><td class="">2,8%</td><td class="">-7,8%</td><td class="">2,8%</td><td class="">-36,6%</td><td class="">-7,8%</td></tr><tr class="" data-lbl="amortização de dívida"><td>Amortização de dívida</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;amort&#39;)"><span class="vpos">3.763.000,00</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;amort&#39;)"><span class="vpos">940.749,99</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;amort&#39;)"><span class="vpos">1.176.849,96</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;amort&#39;)"><span class="vpos">979.925,69</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;amort&#39;)"><span class="vpos">196.924,27</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;amort&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="contrato de mútuo coligadas"><td>Contrato de Mútuo coligadas</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;mutuo&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;mutuo&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;mutuo&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;mutuo&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;mutuo&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;mutuo&#39;)"><span class="">-</span></td></tr><tr class="r-total" data-lbl="saldo para o fluxo de caixa"><td>Saldo para o Fluxo de Caixa</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;fc&#39;)"><span class="vneg">(2.209.412,34)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;fc&#39;)"><span class="vneg">(552.353,07)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;fc&#39;)"><span class="vneg">(16.524.000,68)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;fc&#39;)"><span class="vneg">(848.953,06)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;fc&#39;)"><span class="vneg">(923.991,62)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;fc&#39;)"><span class="vneg">(14.751.056,00)</span></td></tr><tr class="r-blank"><td colspan="7"></td></tr><tr class="" data-lbl="breakeven operacional"><td>Breakeven Operacional</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;bkop&#39;)"><span class="vpos">27.007.849,04</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;bkop&#39;)"><span class="vpos">6.751.962,28</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;bkop&#39;)"><span class="vneg">(11.702.210,89)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;bkop&#39;)"><span class="vpos">2.637.071,45</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;bkop&#39;)"><span class="vneg">(10.426.394,56)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;bkop&#39;)"><span class="">-</span></td></tr><tr class="r-blank"><td colspan="7"></td></tr><tr class="" data-lbl="estoques"><td>Estoques</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;estq&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;estq&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;estq&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;estq&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;estq&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;estq&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="contas a receber"><td>Contas a Receber</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;crec&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;crec&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;crec&#39;)"><span class="vpos">12.182.435,27</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;crec&#39;)"><span class="vpos">6.445.611,52</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;crec&#39;)"><span class="vpos">5.736.823,75</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;crec&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="contas a pagar"><td>Contas a Pagar</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;cpag&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;cpag&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;cpag&#39;)"><span class="vpos">19.182.973,42</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;cpag&#39;)"><span class="vpos">9.173.549,08</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;cpag&#39;)"><span class="vpos">10.009.424,34</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;cpag&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="ncg"><td>NCG</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;ncg&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;ncg&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;ncg&#39;)"><span class="vneg">(7.000.538,15)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;ncg&#39;)"><span class="vneg">(2.727.937,56)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;ncg&#39;)"><span class="vneg">(4.272.600,59)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;ncg&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="ncg mês anterior"><td>NCG mês anterior</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;ncg_ant&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;ncg_ant&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;ncg_ant&#39;)"><span class="vpos">2,00</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;ncg_ant&#39;)"><span class="vpos">1,00</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;ncg_ant&#39;)"><span class="vpos">1,00</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;ncg_ant&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="caixa"><td>Caixa</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;caixa&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;caixa&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;caixa&#39;)"><span class="vpos">2.749,79</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;caixa&#39;)"><span class="vpos">1.006,89</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;caixa&#39;)"><span class="vpos">1.742,90</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;caixa&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="bancos"><td>Bancos</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;banco&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;banco&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;banco&#39;)"><span class="vneg">(141.689,21)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;banco&#39;)"><span class="vneg">(152.932,67)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;banco&#39;)"><span class="vpos">11.243,46</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;banco&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="fluxo de caixa operacional"><td>Fluxo de Caixa Operacional</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;fcop&#39;)"><span class="vneg">(2.209.412,34)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;fcop&#39;)"><span class="vneg">(552.353,07)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;fcop&#39;)"><span class="vneg">(9.662.399,95)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;fcop&#39;)"><span class="vpos">1.727.059,72</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;fcop&#39;)"><span class="vpos">3.361.596,33</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;fcop&#39;)"><span class="vneg">(14.751.056,00)</span></td></tr><tr class="" data-lbl="dívidas 12 meses"><td>Dívidas 12 meses</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;div12&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;div12&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;div12&#39;)"><span class="vpos">17.571.987,52</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;div12&#39;)"><span class="vpos">8.465.693,34</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;div12&#39;)"><span class="vpos">9.106.294,18</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;div12&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="dívidas &gt;12 meses"><td>Dívidas &gt;12 meses</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;div12p&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;div12p&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;div12p&#39;)"><span class="vpos">43.337.182,26</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;div12p&#39;)"><span class="vpos">20.811.221,30</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;div12p&#39;)"><span class="vpos">22.525.960,96</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;div12p&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="endividamento líquido"><td>Endividamento Líquido</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;endliq&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;endliq&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;endliq&#39;)"><span class="vneg">(4,05)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;endliq&#39;)"><span class="vpos">103,29</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;endliq&#39;)"><span class="vneg">(56,52)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;endliq&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="obrigação anual da dívida"><td>Obrigação anual da dívida</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;oban&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;oban&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;oban&#39;)"><span class="vneg">(1,17)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;oban&#39;)"><span class="vpos">29,87</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;oban&#39;)"><span class="vneg">(16,27)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;oban&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="ativo fixo investimento"><td>Ativo Fixo Investimento</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;atfx&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;atfx&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;atfx&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;atfx&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;atfx&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;atfx&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="roi - retorno sob investimento"><td>ROI - Retorno sob investimento</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;roi&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;roi&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;roi&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;roi&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;roi&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;roi&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="breakeven negócio"><td>Breakeven negócio</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;bkneg&#39;)"><span class="vpos">69.397.786,13</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;bkneg&#39;)"><span class="vpos">17.349.446,45</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;bkneg&#39;)"><span class="vneg">(32.406.212,20)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;bkneg&#39;)"><span class="vpos">10.579.782,85</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;bkneg&#39;)"><span class="vneg">(18.508.498,30)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;bkneg&#39;)"><span class="">-</span></td></tr></tbody></table></div>
+      <div class="twrap operational-only"><table><thead id="dre-h"><tr><th>Indicador / Linha</th><th class="th-meta">Nova Meta G4</th><th class="th-acum">Acum Plano 2026</th><th class="th-acum">Acum 2026 Real</th><th class="th-real">Jan/26 Real</th><th class="th-real">Fev/26 Real</th><th class="th-real">Mar/26 Real</th></tr></thead><tbody id="dre-b"><tr class="r-total" data-lbl="faturamento total (medição)"><td>Faturamento Total (Medição)</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;fat&#39;)"><span class="vpos">55.502.111,04</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;fat&#39;)"><span class="vpos">13.875.527,76</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;fat&#39;)"><span class="vpos">196.168.265,52</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;fat&#39;)"><span class="vpos">4.625.175,92</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;fat&#39;)"><span class="vpos">1.989.100,60</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;fat&#39;)"><span class="vpos">189.553.989,00</span></td></tr><tr class="" data-lbl="impostos"><td>Impostos</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;imp&#39;)"><span class="vpos">5.550.211,10</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;imp&#39;)"><span class="vpos">1.387.552,77</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;imp&#39;)"><span class="vpos">16.663.364,56</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;imp&#39;)"><span class="vpos">479.801,83</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;imp&#39;)"><span class="vpos">203.380,73</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;imp&#39;)"><span class="vpos">15.980.182,00</span></td></tr><tr class="r-pct" data-lbl="% impostos"><td>% Impostos</td><td class="">10,0%</td><td class="">10,0%</td><td class="">8,5%</td><td class="">10,4%</td><td class="">10,2%</td><td class="">8,4%</td></tr><tr class="" data-lbl="devoluções/acordos"><td>Devoluções/Acordos</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;dev&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;dev&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;dev&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;dev&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;dev&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;dev&#39;)"><span class="">-</span></td></tr><tr class="r-pct" data-lbl="% devoluções/vale compra"><td>% Devoluções/Vale Compra</td><td class="">-</td><td class="">-</td><td class="">-</td><td class="">-</td><td class="">-</td><td class="">-</td></tr><tr class="" data-lbl="financeiro vendas"><td>Financeiro Vendas</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;finv&#39;)"><span class="vpos">610.523,22</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;finv&#39;)"><span class="vpos">152.630,82</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;finv&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;finv&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;finv&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;finv&#39;)"><span class="">-</span></td></tr><tr class="r-pct" data-lbl="% custo financeiro"><td>% custo financeiro</td><td class="">1,1%</td><td class="">1,1%</td><td class="">-</td><td class="">-</td><td class="">-</td><td class="">-</td></tr><tr class="r-total" data-lbl="receita líquida"><td>Receita Líquida</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;rl&#39;)"><span class="vpos">49.341.376,72</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;rl&#39;)"><span class="vpos">12.335.344,17</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;rl&#39;)"><span class="vpos">179.504.900,96</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;rl&#39;)"><span class="vpos">4.145.374,09</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;rl&#39;)"><span class="vpos">1.785.719,87</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;rl&#39;)"><span class="vpos">173.573.807,00</span></td></tr><tr class="r-pct" data-lbl="% faturamento"><td>% Faturamento</td><td class="">88,9%</td><td class="">88,9%</td><td class="">91,5%</td><td class="">89,6%</td><td class="">89,8%</td><td class="">91,6%</td></tr><tr class="" data-lbl="csv (apropriado)"><td>CSV (Apropriado)</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;csv&#39;)"><span class="vpos">39.406.498,84</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;csv&#39;)"><span class="vpos">9.851.624,70</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;csv&#39;)"><span class="vpos">193.665.607,68</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;csv&#39;)"><span class="vpos">3.346.283,05</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;csv&#39;)"><span class="vpos">1.994.461,63</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;csv&#39;)"><span class="vpos">188.324.863,00</span></td></tr><tr class="r-pct" data-lbl="% csv"><td>% CSV</td><td class="">71,0%</td><td class="">71,0%</td><td class="">98,7%</td><td class="">72,3%</td><td class="">100,3%</td><td class="">99,4%</td></tr><tr class="" data-lbl="saldo usina/frota"><td>Saldo Usina/Frota</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;uf&#39;)"><span class="vpos">1.110.042,22</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;uf&#39;)"><span class="vpos">277.510,56</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;uf&#39;)"><span class="vpos">20.599,02</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;uf&#39;)"><span class="vpos">139.676,02</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;uf&#39;)"><span class="vneg">(119.077,00)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;uf&#39;)"><span class="">-</span></td></tr><tr class="r-pct" data-lbl="% csv"><td>% CSV</td><td class="">2,0%</td><td class="">2,0%</td><td class="">0,0%</td><td class="">3,0%</td><td class="">-6,0%</td><td class="">-</td></tr><tr class="r-pct" data-lbl="% csv real apropriado + usina/frota"><td>% CSV Real Apropriado + Usina/Frota</td><td class="">73,0%</td><td class="">73,0%</td><td class="">98,7%</td><td class="">75,4%</td><td class="">94,3%</td><td class="">99,4%</td></tr><tr class="r-total" data-lbl="margem de contribuição"><td>Margem de Contribuição</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;mc&#39;)"><span class="vpos">8.824.835,66</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;mc&#39;)"><span class="vpos">2.206.208,91</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;mc&#39;)"><span class="vneg">(14.181.305,74)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;mc&#39;)"><span class="vpos">659.415,02</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;mc&#39;)"><span class="vneg">(89.664,76)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;mc&#39;)"><span class="vneg">(14.751.056,00)</span></td></tr><tr class="r-pct" data-lbl="% mc"><td>% MC</td><td class="">15,9%</td><td class="">15,9%</td><td class="">-7,2%</td><td class="">14,3%</td><td class="">-4,5%</td><td class="">-7,8%</td></tr><tr class="" data-lbl="pessoal"><td>Pessoal</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;pes&#39;)"><span class="vpos">2.109.200,00</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;pes&#39;)"><span class="vpos">527.300,01</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;pes&#39;)"><span class="vpos">339.267,11</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;pes&#39;)"><span class="vpos">167.799,85</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;pes&#39;)"><span class="vpos">171.467,26</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;pes&#39;)"><span class="">-</span></td></tr><tr class="r-pct" data-lbl="% faturamento"><td>% Faturamento</td><td class="">3,8%</td><td class="">3,8%</td><td class="">0,2%</td><td class="">3,6%</td><td class="">8,6%</td><td class="">-</td></tr><tr class="" data-lbl="despesas administrativas"><td>Despesas Administrativas</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;adm&#39;)"><span class="vpos">2.185.048,00</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;adm&#39;)"><span class="vpos">546.261,99</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;adm&#39;)"><span class="vpos">506.703,72</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;adm&#39;)"><span class="vpos">208.169,53</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;adm&#39;)"><span class="vpos">298.534,19</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;adm&#39;)"><span class="">-</span></td></tr><tr class="r-pct" data-lbl="% faturamento"><td>% Faturamento</td><td class="">3,9%</td><td class="">3,9%</td><td class="">0,3%</td><td class="">4,5%</td><td class="">15,0%</td><td class="">-</td></tr><tr class="" data-lbl="depreciação e amort"><td>Depreciação e Amort</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;dep&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;dep&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;dep&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;dep&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;dep&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;dep&#39;)"><span class="">-</span></td></tr><tr class="r-total" data-lbl="resultado ebitda"><td>Resultado EBITDA</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;ebt&#39;)"><span class="vpos">4.530.587,66</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;ebt&#39;)"><span class="vpos">1.132.646,91</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;ebt&#39;)"><span class="vneg">(15.027.276,57)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;ebt&#39;)"><span class="vpos">283.445,64</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;ebt&#39;)"><span class="vneg">(559.666,21)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;ebt&#39;)"><span class="vneg">(14.751.056,00)</span></td></tr><tr class="r-pct" data-lbl="% faturamento"><td>% Faturamento</td><td class="">8,2%</td><td class="">8,2%</td><td class="">-7,7%</td><td class="">6,1%</td><td class="">-28,1%</td><td class="">-7,8%</td></tr><tr class="" data-lbl="resultado financeiro"><td>Resultado Financeiro</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;rfin&#39;)"><span class="vpos">2.977.000,00</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;rfin&#39;)"><span class="vpos">744.249,99</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;rfin&#39;)"><span class="vpos">319.874,15</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;rfin&#39;)"><span class="vpos">152.473,01</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;rfin&#39;)"><span class="vpos">167.401,14</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;rfin&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="csll + ir"><td>CSLL + IR</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;csir&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;csir&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;csir&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;csir&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;csir&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;csir&#39;)"><span class="">-</span></td></tr><tr class="r-total" data-lbl="resultado líquido"><td>Resultado Líquido</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;rliq&#39;)"><span class="vpos">1.553.587,66</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;rliq&#39;)"><span class="vpos">388.396,92</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;rliq&#39;)"><span class="vneg">(15.347.150,72)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;rliq&#39;)"><span class="vpos">130.972,63</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;rliq&#39;)"><span class="vneg">(727.067,35)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;rliq&#39;)"><span class="vneg">(14.751.056,00)</span></td></tr><tr class="r-pct" data-lbl="% faturamento"><td>% Faturamento</td><td class="">2,8%</td><td class="">2,8%</td><td class="">-7,8%</td><td class="">2,8%</td><td class="">-36,6%</td><td class="">-7,8%</td></tr><tr class="" data-lbl="amortização de dívida"><td>Amortização de dívida</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;amort&#39;)"><span class="vpos">3.763.000,00</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;amort&#39;)"><span class="vpos">940.749,99</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;amort&#39;)"><span class="vpos">1.176.849,96</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;amort&#39;)"><span class="vpos">979.925,69</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;amort&#39;)"><span class="vpos">196.924,27</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;amort&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="contrato de mútuo coligadas"><td>Contrato de Mútuo coligadas</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;mutuo&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;mutuo&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;mutuo&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;mutuo&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;mutuo&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;mutuo&#39;)"><span class="">-</span></td></tr><tr class="r-total" data-lbl="saldo para o fluxo de caixa"><td>Saldo para o Fluxo de Caixa</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;fc&#39;)"><span class="vneg">(2.209.412,34)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;fc&#39;)"><span class="vneg">(552.353,07)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;fc&#39;)"><span class="vneg">(16.524.000,68)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;fc&#39;)"><span class="vneg">(848.953,06)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;fc&#39;)"><span class="vneg">(923.991,62)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;fc&#39;)"><span class="vneg">(14.751.056,00)</span></td></tr><tr class="r-blank"><td colspan="7"></td></tr><tr class="" data-lbl="breakeven operacional"><td>Breakeven Operacional</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;bkop&#39;)"><span class="vpos">27.007.849,04</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;bkop&#39;)"><span class="vpos">6.751.962,28</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;bkop&#39;)"><span class="vneg">(11.702.210,89)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;bkop&#39;)"><span class="vpos">2.637.071,45</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;bkop&#39;)"><span class="vneg">(10.426.394,56)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;bkop&#39;)"><span class="">-</span></td></tr><tr class="r-blank"><td colspan="7"></td></tr><tr class="" data-lbl="estoques"><td>Estoques</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;estq&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;estq&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;estq&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;estq&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;estq&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;estq&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="contas a receber"><td>Contas a Receber</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;crec&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;crec&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;crec&#39;)"><span class="vpos">12.182.435,27</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;crec&#39;)"><span class="vpos">6.445.611,52</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;crec&#39;)"><span class="vpos">5.736.823,75</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;crec&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="contas a pagar"><td>Contas a Pagar</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;cpag&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;cpag&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;cpag&#39;)"><span class="vpos">19.182.973,42</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;cpag&#39;)"><span class="vpos">9.173.549,08</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;cpag&#39;)"><span class="vpos">10.009.424,34</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;cpag&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="ncg"><td>NCG</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;ncg&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;ncg&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;ncg&#39;)"><span class="vneg">(7.000.538,15)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;ncg&#39;)"><span class="vneg">(2.727.937,56)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;ncg&#39;)"><span class="vneg">(4.272.600,59)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;ncg&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="ncg mês anterior"><td>NCG mês anterior</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;ncg_ant&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;ncg_ant&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;ncg_ant&#39;)"><span class="vpos">2,00</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;ncg_ant&#39;)"><span class="vpos">1,00</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;ncg_ant&#39;)"><span class="vpos">1,00</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;ncg_ant&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="caixa"><td>Caixa</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;caixa&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;caixa&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;caixa&#39;)"><span class="vpos">2.749,79</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;caixa&#39;)"><span class="vpos">1.006,89</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;caixa&#39;)"><span class="vpos">1.742,90</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;caixa&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="bancos"><td>Bancos</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;banco&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;banco&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;banco&#39;)"><span class="vneg">(141.689,21)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;banco&#39;)"><span class="vneg">(152.932,67)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;banco&#39;)"><span class="vpos">11.243,46</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;banco&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="fluxo de caixa operacional"><td>Fluxo de Caixa Operacional</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;fcop&#39;)"><span class="vneg">(2.209.412,34)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;fcop&#39;)"><span class="vneg">(552.353,07)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;fcop&#39;)"><span class="vneg">(9.662.399,95)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;fcop&#39;)"><span class="vpos">1.727.059,72</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;fcop&#39;)"><span class="vpos">3.361.596,33</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;fcop&#39;)"><span class="vneg">(14.751.056,00)</span></td></tr><tr class="" data-lbl="dívidas 12 meses"><td>Dívidas 12 meses</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;div12&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;div12&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;div12&#39;)"><span class="vpos">17.571.987,52</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;div12&#39;)"><span class="vpos">8.465.693,34</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;div12&#39;)"><span class="vpos">9.106.294,18</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;div12&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="dívidas &gt;12 meses"><td>Dívidas &gt;12 meses</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;div12p&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;div12p&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;div12p&#39;)"><span class="vpos">43.337.182,26</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;div12p&#39;)"><span class="vpos">20.811.221,30</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;div12p&#39;)"><span class="vpos">22.525.960,96</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;div12p&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="endividamento líquido"><td>Endividamento Líquido</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;endliq&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;endliq&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;endliq&#39;)"><span class="vneg">(4,05)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;endliq&#39;)"><span class="vpos">103,29</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;endliq&#39;)"><span class="vneg">(56,52)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;endliq&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="obrigação anual da dívida"><td>Obrigação anual da dívida</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;oban&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;oban&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;oban&#39;)"><span class="vneg">(1,17)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;oban&#39;)"><span class="vpos">29,87</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;oban&#39;)"><span class="vneg">(16,27)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;oban&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="ativo fixo investimento"><td>Ativo Fixo Investimento</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;atfx&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;atfx&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;atfx&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;atfx&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;atfx&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;atfx&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="roi - retorno sob investimento"><td>ROI - Retorno sob investimento</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;roi&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;roi&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;roi&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;roi&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;roi&#39;)"><span class="">-</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;roi&#39;)"><span class="">-</span></td></tr><tr class="" data-lbl="breakeven negócio"><td>Breakeven negócio</td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Nova Meta G4&#39;,&#39;bkneg&#39;)"><span class="vpos">69.397.786,13</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum Plano 2026&#39;,&#39;bkneg&#39;)"><span class="vpos">17.349.446,45</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Acum 2026 Real&#39;,&#39;bkneg&#39;)"><span class="vneg">(32.406.212,20)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Jan\/26 Real&#39;,&#39;bkneg&#39;)"><span class="vpos">10.579.782,85</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Fev\/26 Real&#39;,&#39;bkneg&#39;)"><span class="vneg">(18.508.498,30)</span></td><td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,&#39;Mar\/26 Real Real&#39;,&#39;bkneg&#39;)"><span class="">-</span></td></tr></tbody></table></div>
     </div>
 
     <!-- BALANÇO -->
@@ -1443,7 +1455,7 @@ tbody tr:last-child td{border-bottom:none;}
       <div class="mtitle">+ Novo <em>Mês Real</em></div>
       <div class="mfg"><label>Identificação do mês (ex: Mar/26)</label><input type="text" id="nm-mes" placeholder="Mar/26"></div>
       <div class="mfg"><label>Copiar valores de (opcional)</label>
-        <select id="nm-copy"><option value="">— Coluna em branco —</option><option value="Plano 2022">Plano 2022</option><option value="Ano 2022">Ano 2022</option><option value="Ano 2023 PE Plano">Ano 2023 PE Plano</option><option value="Ano 2023 Real">Ano 2023 Real</option><option value="Ano 2024">Ano 2024</option><option value="Ano 2025 PE Plano">Ano 2025 PE Plano</option><option value="Ano 2025 Real">Ano 2025 Real</option><option value="PLANO 2026">PLANO 2026</option><option value="Nova Meta G4">Nova Meta G4</option><option value="Acum Plano 2026">Acum Plano 2026</option><option value="Nova Meta Mês">Nova Meta Mês</option><option value="Acum 2026 Real">Acum 2026 Real</option><option value="Jan/26 Real">Jan/26 Real</option><option value="Fev/26 Real">Fev/26 Real</option><option value="Mar/26 Real Real">Mar/26 Real Real</option></select>
+        <select id="nm-copy"><option value="">— Coluna em branco —</option><option value="Plano 2022">Plano 2022</option><option value="Ano 2022">Ano 2022</option><option value="Ano 2023 PE Plano">Ano 2023 PE Plano</option><option value="Ano 2023 Real">Ano 2023 Real</option><option value="Ano 2024">Ano 2024</option><option value="Ano 2025 PE Plano">Ano 2025 PE Plano</option><option value="Ano 2025 Real">Ano 2025 Real</option><option value="PLANO 2026">PLANO 2026</option><option value="Nova Meta G4">Nova Meta G4</option><option value="Acum Plano 2026">Acum Plano 2026</option><option value="Nova Meta Mês">Nova Meta Mês</option><option value="Acum 2026 Real">Acum 2026 Real</option><option value="Jan/26 Real">Jan/26 Real</option><option value="Fev/26 Real">Fev/26 Real</option><option value="Mar/26 Real">Mar/26 Real</option></select>
       </div>
       <p class="mhint">Será criada <strong>1 coluna Real</strong> para o mês informado. Ao preencher os valores, a coluna <strong>Acum 2026 Real</strong> é recalculada automaticamente. Linhas de % usam fórmula automática.</p>
       <div class="mfooter">
@@ -1631,14 +1643,14 @@ async function savePending(obj){
   // savePending receives full object — used only for deletes (approve/reject handle their own)
   localStorage.setItem('jr4_pending', JSON.stringify(obj));
 }
-async function addPending(username, nome, senha, email=''){
+async function addPending(username, nome, senhaHash, email=''){
   await sbFetch('pendentes', {
     method:'POST',
     prefer:'resolution=merge-duplicates',
-    body: JSON.stringify({username, nome, senha, email})
+    body: JSON.stringify({username, nome, senha:senhaHash, email})
   });
   const p = JSON.parse(localStorage.getItem('jr4_pending')||'{}');
-  p[username]={label:nome,pass:senha,email,ts:new Date().toLocaleString('pt-BR'),status:'pending'};
+  p[username]={label:nome,pass:senhaHash,email,ts:new Date().toLocaleString('pt-BR'),status:'pending'};
   localStorage.setItem('jr4_pending', JSON.stringify(p));
 }
 async function deletePending(username){
@@ -1650,38 +1662,48 @@ async function getApprovedUsers(){
   try{
     const rows = await sbFetch('usuarios?select=*&status=eq.active');
     const obj = {};
-    (rows||[]).forEach(r=>{ obj[r.username]={pass:r.senha, role:r.role, label:r.nome}; });
+    (rows||[]).forEach(r=>{ obj[r.username]={pass:r.senha, role:r.role, label:r.nome, email:r.email||''}; });
     return obj;
   }catch{ return JSON.parse(localStorage.getItem('jr4_users')||'{}'); }
 }
 async function saveApprovedUsers(obj){
   localStorage.setItem('jr4_users', JSON.stringify(obj));
 }
-async function addApprovedUser(username, nome, senha, role){
+async function addApprovedUser(username, nome, senhaHash, role, email=''){
   await sbFetch('usuarios', {
     method:'POST',
     prefer:'resolution=merge-duplicates',
-    body: JSON.stringify({username, nome, senha, role, status:'active'})
+    body: JSON.stringify({username, nome, senha:senhaHash, role, status:'active', email})
   });
 }
 
+async function updateApprovedUserPassword(username, senhaHash){
+  try{
+    await sbFetch(`usuarios?username=eq.${encodeURIComponent(username)}`, {
+      method:'PATCH',
+      body: JSON.stringify({senha:senhaHash})
+    });
+  }catch(e){
+    const users = JSON.parse(localStorage.getItem('jr4_users')||'{}');
+    if(users[username]){
+      users[username].pass = senhaHash;
+      localStorage.setItem('jr4_users', JSON.stringify(users));
+    }
+  }
+}
 function getPendingSync(){return JSON.parse(localStorage.getItem('jr4_pending')||'{}')}
 function savePendingSync(obj){localStorage.setItem('jr4_pending',JSON.stringify(obj));}
 
 async function doLogin(){
-  // Reload approved users from shared storage
   const sharedUsers=await getApprovedUsers();
   USERS=Object.assign({},DEFAULT_USERS,sharedUsers);
-  // Also sync to localStorage
   localStorage.setItem('jr4_users',JSON.stringify(sharedUsers));
 
   const u=document.getElementById('iu').value.trim().toLowerCase();
   const p=document.getElementById('ip').value;
   const errEl=document.getElementById('lerr');
 
-  // Check shared pending list
   const pending=await getPending();
-  // Sync pending to localStorage
   localStorage.setItem('jr4_pending',JSON.stringify(pending));
 
   if(pending[u]){
@@ -1690,7 +1712,18 @@ async function doLogin(){
   }
   const usr=USERS[u];
   if(!usr){errEl.textContent=`Usuário "${u}" não encontrado.`;errEl.style.display='block';return;}
-  if(usr.pass!==p){errEl.textContent='Senha incorreta.';errEl.style.display='block';return;}
+
+  let okSenha = await verificaSenha(p, usr.pass);
+  if(!okSenha && usr.pass && usr.pass.length !== 64 && usr.pass === p){
+    try{
+      const novoHash = await hashSenha(p);
+      usr.pass = novoHash;
+      await updateApprovedUserPassword(u, novoHash);
+      okSenha = true;
+    }catch(e){}
+  }
+
+  if(!okSenha){errEl.textContent='Senha incorreta.';errEl.style.display='block';return;}
   errEl.style.display='none';
   CU={id:u,...usr};
   document.getElementById('curlbl').textContent=usr.label;
@@ -1712,12 +1745,13 @@ async function doRegister(){
   if(!nome||!email||!user||!pass){err.textContent='Preencha todos os campos.';err.style.display='block';return;}
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){err.textContent='E-mail inválido.';err.style.display='block';return;}
   if(user.length<3){err.textContent='Usuário deve ter ao menos 3 caracteres.';err.style.display='block';return;}
-  if(pass.length<6){err.textContent='Senha deve ter ao menos 6 caracteres.';err.style.display='block';return;}
+  if(pass.length<8 || !/[A-Z]/.test(pass) || !/[a-z]/.test(pass) || !/\d/.test(pass)){
+    err.textContent='A senha deve ter ao menos 8 caracteres, com letra maiúscula, minúscula e número.';
+    err.style.display='block';return;
+  }
   if(pass!==pass2){err.textContent='As senhas não coincidem.';err.style.display='block';return;}
 
   btn.disabled=true;btn.textContent='Verificando...';
-
-  // Check shared storage for conflicts
   const sharedUsers=await getApprovedUsers();
   USERS=Object.assign({},DEFAULT_USERS,sharedUsers);
   if(USERS[user]){
@@ -1730,30 +1764,22 @@ async function doRegister(){
     btn.disabled=false;btn.textContent='Solicitar Acesso';return;
   }
 
-  // Save as pending in Supabase (with email)
   try{
-    await addPending(user, nome, pass, email);
+    const passHash = await hashSenha(pass);
+    await addPending(user, nome, passHash, email);
   }catch(e){
     console.warn('Supabase addPending error:',e);
-    const p=JSON.parse(localStorage.getItem('jr4_pending')||'{}');
-    p[user]={label:nome,pass,email,ts:new Date().toLocaleString('pt-BR'),status:'pending'};
-    localStorage.setItem('jr4_pending',JSON.stringify(p));
+    err.textContent='Não foi possível enviar sua solicitação agora. Tente novamente em instantes.';
+    err.style.display='block';
+    btn.disabled=false;btn.textContent='Solicitar Acesso';return;
   }
 
   btn.textContent='Enviando e-mail...';
-
-  // Send e-mail via EmailJS
-  const params={
-    nome_solicitante:nome,
-    usuario:user,
-    data_hora:new Date().toLocaleString('pt-BR'),
-  };
+  const params={ nome_solicitante:nome, usuario:user, data_hora:new Date().toLocaleString('pt-BR') };
   try{
     if(typeof emailjs==='undefined') throw new Error('EmailJS não carregado');
     await emailjs.send(EMAILJS_SERVICE,EMAILJS_TEMPLATE,params);
-  }catch(e){
-    console.warn('EmailJS erro:',e);
-  }
+  }catch(e){ console.warn('EmailJS erro:',e); }
 
   btn.disabled=false;btn.textContent='Solicitar Acesso';
   showPanel('panel-pending');
@@ -1808,7 +1834,7 @@ async function approveUser(u){
   if(!p)return;
   const role=document.getElementById(`role-${u}`).value;
   const roleLabel={viewer:'Visualizador',editor:'Editor',admin:'Administrador'};
-  try{ await addApprovedUser(u, p.label, p.pass, role); }catch(e){console.warn('approve user err:',e);}
+  try{ await addApprovedUser(u, p.label, p.pass, role, p.email||''); }catch(e){console.warn('approve user err:',e);}
   try{ await deletePending(u); }catch(e){console.warn('delete pending err:',e);}
   const sharedUsers=await getApprovedUsers();
   USERS=Object.assign({},DEFAULT_USERS,sharedUsers);
@@ -2066,7 +2092,107 @@ let HC=JSON.parse(localStorage.getItem('jr4_hc')||'[]');
 const PD=Object.assign({},PD_DEF,SX);
 Object.keys(SE).forEach(p=>{if(PD[p])Object.assign(PD[p],SE[p]);});
 if(SR.length) SR.forEach(r=>DROWS.push(r));
-let activePer='Fev/26 Real';
+let activePer=localStorage.getItem('jr4_active_per')||'Fev/26 Real';
+let DASH_MODE=localStorage.getItem('jr4_dash_mode')||'mensal-real';
+let VIEW_MODE=localStorage.getItem('jr4_view_mode')||'operacional';
+
+function getPeriodLabel(p){
+  const aliases={
+    'Nova Meta G4':'Meta • Ano',
+    'Nova Meta Mês':'Meta • Mês',
+    'Acum Plano 2026':'Acum. 2026 • Plano',
+    'Acum 2026 Real':'Acum. 2026 • Real',
+    'PLANO 2026':'2026 • Plano',
+    'Mar/26 Real':'Mar/26 Real'
+  };
+  if(aliases[p]) return aliases[p];
+  return String(p)
+    .replace(/\s+/g,' ')
+    .trim()
+    .replace(/\bReal\s+Real\b/gi,'Real')
+    .replace(/\bPlano\s+Plano\b/gi,'Plano')
+    .replace(/\bMeta\s+Meta\b/gi,'Meta');
+}
+function normalizePeriodData(src){
+  const d=Object.assign({}, src||{});
+  d.fat = +d.fat || 0;
+  d.imp = +d.imp || 0;
+  d.dev = +d.dev || 0;
+  d.csv = +d.csv || 0;
+  d.pes = +d.pes || 0;
+  d.adm = +d.adm || 0;
+  d.rfin = +d.rfin || 0;
+  d.csir = +d.csir || 0;
+  d.amort = +d.amort || 0;
+  d.rl = d.fat - d.imp - d.dev;
+  d.rl_p = d.fat ? d.rl / d.fat : 0;
+  d.mc = d.rl - d.csv;
+  d.mc_p = d.fat ? d.mc / d.fat : 0;
+  d.ebt = d.mc - d.pes - d.adm;
+  d.ebt_p = d.fat ? d.ebt / d.fat : 0;
+  d.rliq = d.ebt - d.rfin - d.csir;
+  d.rliq_p = d.fat ? d.rliq / d.fat : 0;
+  d.imp_p = d.fat ? d.imp / d.fat : 0;
+  d.csv_p = d.fat ? d.csv / d.fat : 0;
+  d.pes_p = d.fat ? d.pes / d.fat : 0;
+  d.adm_p = d.fat ? d.adm / d.fat : 0;
+  d.fc = +d.fc || 0;
+  return d;
+}
+function getMonthlyRealPeriods(){
+  return getOrderedCols().filter(p=>PD[p] && PD[p]._t==='real');
+}
+function getDashboardPeriod(){
+  const monthly=getMonthlyRealPeriods();
+  if(DASH_MODE==='mensal-real'){
+    if(PD[activePer] && PD[activePer]._t==='real') return activePer;
+    return monthly[monthly.length-1] || activePer;
+  }
+  if(DASH_MODE==='mensal-meta') return 'Nova Meta Mês';
+  if(DASH_MODE==='acum-real') return 'Acum 2026 Real';
+  if(DASH_MODE==='acum-plano') return 'Acum Plano 2026';
+  return activePer;
+}
+function setViewMode(el, mode){
+  VIEW_MODE=mode;
+  localStorage.setItem('jr4_view_mode', VIEW_MODE);
+  document.querySelectorAll('#view-mode-bar .tbtn').forEach(b=>b.classList.remove('active'));
+  if(el) el.classList.add('active');
+  document.body.classList.remove('mode-executivo','mode-operacional');
+  document.body.classList.add(mode==='executivo'?'mode-executivo':'mode-operacional');
+  renderCurrentView();
+}
+function renderExecutiveSummary(){
+  const wrap=document.getElementById('dre-executive');
+  if(!wrap) return;
+  const per=getDashboardPeriod();
+  const d=normalizePeriodData(PD[per]||{});
+  const kpis=[
+    {l:'Faturamento',v:'R$ '+(d.fat/1e6).toFixed(2)+'M',s:getPeriodLabel(per),ac:'k-gold'},
+    {l:'Receita Líquida',v:'R$ '+(d.rl/1e6).toFixed(2)+'M',s:fmtP(d.rl_p)+' do fat.',ac:'k-gold'},
+    {l:'Margem Contribuição',v:fmtP(d.mc_p),s:'R$ '+(d.mc/1e3).toFixed(0)+'k',ac:d.mc_p>=0.149?'k-green':'k-red'},
+    {l:'EBITDA',v:fmtP(d.ebt_p),s:'R$ '+(d.ebt/1e3).toFixed(0)+'k',ac:d.ebt>0?'k-green':'k-red'},
+    {l:'Resultado Líquido',v:'R$ '+(d.rliq/1e3).toFixed(0)+'k',s:fmtP(d.rliq_p)+' do fat.',ac:d.rliq>0?'k-green':'k-red'},
+    {l:'Fluxo de Caixa',v:'R$ '+(d.fc/1e3).toFixed(0)+'k',s:'Após amortizações',ac:d.fc>0?'k-green':'k-red'}
+  ];
+  const alerts=[];
+  if(d.ebt<0) alerts.push('EBITDA negativo no contexto selecionado.');
+  if(d.csv_p>0.72) alerts.push('CSV acima da meta de 72%.');
+  if(d.imp_p>0.11) alerts.push('Impostos acima do parâmetro de 11%.');
+  if(d.mc_p<0.149) alerts.push('Margem de contribuição abaixo da meta.');
+  document.getElementById('dre-exec-kpis').innerHTML=kpis.map(k=>`<div class="kcard ${k.ac}"><div class="klbl">${k.l}</div><div class="kval">${k.v}</div><div class="ksub">${k.s}</div></div>`).join('');
+  document.getElementById('dre-exec-alerts').innerHTML=(alerts.length?alerts:['Nenhum alerta crítico no período selecionado.']).map(a=>`<div class="exec-alert">${a}</div>`).join('');
+}
+function renderCurrentView(){
+  const exec=document.getElementById('dre-executive');
+  if(exec) exec.style.display = VIEW_MODE==='executivo' ? '' : 'none';
+  document.querySelectorAll('#view-mode-bar .tbtn').forEach(b=>b.classList.remove('active'));
+  const targetBtn=document.querySelector(`#view-mode-bar .tbtn[onclick*="${VIEW_MODE}"]`);
+  if(targetBtn) targetBtn.classList.add('active');
+  renderExecutiveSummary();
+  buildKPI();
+  buildDRE();
+}
 
 // Save DRE edit to Supabase + localStorage cache
 const save=()=>{
@@ -2158,7 +2284,7 @@ async function loadDREFromSupabase(){
     localStorage.setItem('jr4_e',JSON.stringify(SE));
     localStorage.setItem('jr4_x',JSON.stringify(SX));
     recalcAcum();
-    if(Object.keys(customPeriods).length>0){buildPerBtns();buildKPI();buildDRE();}
+    if(Object.keys(customPeriods).length>0){buildPerBtns();renderCurrentView();}
     console.log(`✅ DRE carregado: ${rows.length} registros, ${Object.keys(customPeriods).length} colunas customizadas`);
   }catch(e){console.warn('loadDRE error:',e);}
 }
@@ -2346,7 +2472,13 @@ function swTab(el,id){
 
 // ══ INIT ══
 function init(){
-  recalcAcum();buildPerBtns();buildKPI();buildDRE();buildBal();buildPlano(PLANO);
+  document.body.classList.remove('mode-executivo','mode-operacional');
+  document.body.classList.add(VIEW_MODE==='executivo' ? 'mode-executivo' : 'mode-operacional');
+  const viewButtons=document.querySelectorAll('#view-mode-bar .tbtn');
+  viewButtons.forEach(btn=>btn.classList.remove('active'));
+  const targetBtn=document.querySelector(`#view-mode-bar .tbtn[onclick*="${VIEW_MODE}"]`);
+  if(targetBtn) targetBtn.classList.add('active');
+  recalcAcum();buildPerBtns();renderCurrentView();buildBal();buildPlano(PLANO);
   buildDashboard();
   // Show pending tab only for admins
   const tab=document.getElementById('tab-pending');
@@ -2358,7 +2490,7 @@ function init(){
     loadBalFromSupabase(),
     loadPlanoFromSupabase()
   ]).then(()=>{
-    buildPerBtns();buildKPI();buildDRE();buildBal();buildPlano(PLANO);buildDashboard();
+    buildPerBtns();renderCurrentView();buildBal();buildPlano(PLANO);buildDashboard();
   });
   // Start realtime sync
   startRealtime();
@@ -2398,16 +2530,16 @@ function buildPerBtns(){
       ondragleave="onColDragLeave(event)"
       ondrop="onColDrop(event,'${pp}')"
       ondragend="onColDragEnd(event)">
-      <span style="cursor:grab;margin-right:4px;opacity:.4;font-size:.7rem">⠿</span>${p}<button class="hide-x" onclick="event.stopPropagation();toggleHide('${pp}')" title="${manualHid?'Mostrar':'Ocultar'}">${manualHid?'👁':'×'}</button>
+      <span style="cursor:grab;margin-right:4px;opacity:.4;font-size:.7rem">⠿</span>${getPeriodLabel(p)}<button class="hide-x" onclick="event.stopPropagation();toggleHide('${pp}')" title="${manualHid?'Mostrar':'Ocultar'}">${manualHid?'👁':'×'}</button>
     </div>`;
   }).join('');
   // hidden bar
   const hb=document.getElementById('hbar');
-  document.getElementById('hnames').innerHTML=HC.map(c=>`<span class="unhide" onclick="toggleHide('${c.replace(/'/g,"\\'")}')">👁 ${c}</span>`).join(' ');
+  document.getElementById('hnames').innerHTML=HC.map(c=>`<span class="unhide" onclick="toggleHide('${c.replace(/'/g,"\\'")}')">👁 ${getPeriodLabel(c)}</span>`).join(' ');
   hb.style.display=HC.length?'flex':'none';
   // fill nm-copy
   const sel=document.getElementById('nm-copy');
-  if(sel)sel.innerHTML='<option value="">— Coluna em branco —</option>'+cols.map(p=>`<option value="${p}">${p}</option>`).join('');
+  if(sel)sel.innerHTML='<option value="">— Coluna em branco —</option>'+cols.map(p=>`<option value="${p}">${getPeriodLabel(p)}</option>`).join('');
 }
 
 // ── Drag-and-drop para reordenar colunas ───────────────────────────────
@@ -2448,12 +2580,17 @@ const PROTECTED_COLS=new Set([
 ]);
 function selPer(el,p){
   activePer=p;
+  localStorage.setItem('jr4_active_per', activePer);
+  if(PD[p] && PD[p]._t==='real'){
+    const dashSel=document.getElementById('dash-per-sel');
+    if(dashSel) dashSel.value=p;
+  }
   document.querySelectorAll('.perbtn').forEach(b=>b.classList.remove('active'));
   el.classList.add('active');
   // Show delete button for any column when admin/editor — protected cols get warning on click
   const canDel=CU?.role==='admin'||CU?.role==='editor';
   document.getElementById('btn-del').style.display=canDel?'':'none';
-  buildKPI();buildDRE();
+  renderCurrentView();
 }
 function delPer(){
   if(PROTECTED_COLS.has(activePer)){
@@ -2470,14 +2607,15 @@ function delPer(){
   pushH({type:'delcol',user:CU.label,ts:ts(),icon:'🗑️',col:n});
   // Select last available column
   activePer=Object.keys(PD).slice(-1)[0];
-  buildPerBtns();buildKPI();buildDRE();
+  buildPerBtns();renderCurrentView();
   toast(`Coluna "${n}" excluída.`);
 }
 // ══ KPI ══
 function buildKPI(){
-  const d=PD[activePer];
+  const per=getDashboardPeriod();
+  const d=normalizePeriodData(PD[per]||{});
   const cards=[
-    {l:'Faturamento',v:'R$ '+(d.fat/1e6).toFixed(2)+'M',s:activePer,b:'',bc:'',ac:'k-gold'},
+    {l:'Faturamento',v:'R$ '+(d.fat/1e6).toFixed(2)+'M',s:getPeriodLabel(per),b:'',bc:'',ac:'k-gold'},
     {l:'Receita Líquida',v:'R$ '+(d.rl/1e6).toFixed(2)+'M',s:fmtP(d.rl_p)+' do fat.',b:'',bc:'',ac:'k-gold'},
     {l:'Margem Contribuição',v:fmtP(d.mc_p),s:'R$ '+(d.mc/1e3).toFixed(0)+'k',b:d.mc_p>=0.149?'▲ Meta':'▼ Abaixo',bc:d.mc_p>=0.149?'b-green':'b-red',ac:d.mc_p>=0.149?'k-green':'k-red'},
     {l:'EBITDA',v:fmtP(d.ebt_p),s:'R$ '+(d.ebt/1e3).toFixed(0)+'k',b:d.ebt>0?'▲ Positivo':'▼ Negativo',bc:d.ebt>0?'b-green':'b-red',ac:d.ebt>0?'k-green':'k-red'},
@@ -2493,7 +2631,7 @@ function buildDRE(){
   const vis=getOrderedCols().filter(p=>!hiddenAll(p));
   const tcls={'plan':'th-plan','real':'th-real','meta':'th-meta','acum-plan':'th-acum','acum-real':'th-acum'};
   document.getElementById('dre-h').innerHTML='<tr><th>Indicador / Linha</th>'+
-    vis.map(p=>`<th class="${tcls[PD[p]._t]||''}">${p}</th>`).join('')+'</tr>';
+    vis.map(p=>`<th class="${tcls[PD[p]._t]||''}" title="${p}">${getPeriodLabel(p)}</th>`).join('')+'</tr>';
   document.getElementById('dre-b').innerHTML=DROWS.map(row=>{
     if(row.type==='blank')return`<tr class="r-blank"><td colspan="${vis.length+1}"></td></tr>`;
     const isPct=row.type==='percent';
@@ -2592,7 +2730,7 @@ function saveEditDRE(per,rowId,inp){
   if(PD[per]._month)recalcAcum();
   const lbl=DROWS.find(r=>r.id===rowId)?.label||rowId;
   pushH({type:'edit',user:CU?.label||'—',ts:ts(),icon:'✏️',period:per,lbl,oldV:fmtV(old),newV:fmtV(nv)});
-  buildKPI();buildDRE();toast(`💾 ${lbl} salvo!`);
+  renderCurrentView();toast(`💾 ${lbl} salvo!`);
 }
 function focusNextCell(inp){
   const td=inp.closest('td');
@@ -3234,75 +3372,56 @@ function cM(id){document.getElementById(id).style.display='none';}
 // 2 — SENHA HASH (SHA-256 via WebCrypto — sem bcrypt no browser)
 // ══════════════════════════════════════════════════════════════
 async function hashSenha(senha){
-  try{
-    const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(senha));
-    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-  }catch{return senha;} // fallback plain if crypto unavailable
+  if(!window.crypto?.subtle){
+    throw new Error('Criptografia indisponível neste navegador.');
+  }
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(senha));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
-// Comparar senha — suporta hash e plain (para usuários antigos)
 async function verificaSenha(input,stored){
   if(!stored)return false;
-  if(stored.length===64){const h=await hashSenha(input);return h===stored;}
-  return input===stored; // plain text fallback
+  if(stored.length!==64)return false;
+  const h=await hashSenha(input);
+  return h===stored;
 }
-
-// ══════════════════════════════════════════════════════════════
-// 1 — SINCRONIZAÇÃO EM TEMPO REAL (polling Supabase a cada 30s)
-// ══════════════════════════════════════════════════════════════
-let _realtimeInterval=null;
-let _lastSync=null;
-function startRealtime(){
-  const badge=document.getElementById('sync-badge');
-  if(badge)badge.style.display='flex';
-  _realtimeInterval=setInterval(async()=>{
-    if(!CU)return;
-    try{
-      // Check if DRE data was updated since last sync
-      const ts_param=_lastSync?`&atualizado_em=gt.${_lastSync}`:'';
-      const rows=await sbFetch(`dre_dados?select=*${ts_param}&order=atualizado_em.desc&limit=1`);
-      if(rows&&rows.length>0){
-        await loadDREFromSupabase();
-        buildKPI();buildDRE();
-        const d=document.getElementById('t-dash');
-        if(d&&d.style.display!=='none')buildDashboard();
-      }
-      _lastSync=new Date().toISOString();
-    }catch{}
-  },30000); // every 30 seconds
+let _pwResetCode = null;
+function generateResetCode(){
+  const arr=new Uint8Array(4);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(n=>(n%10).toString()).join('');
 }
-function stopRealtime(){
-  if(_realtimeInterval){clearInterval(_realtimeInterval);_realtimeInterval=null;}
-  const badge=document.getElementById('sync-badge');
-  if(badge)badge.style.display='none';
-}
-
-// ══════════════════════════════════════════════════════════════
-// 7 — RECUPERAÇÃO DE SENHA
-// ══════════════════════════════════════════════════════════════
 async function doForgotPassword(){
   const user=document.getElementById('fp-user').value.trim().toLowerCase();
   const err=document.getElementById('fp-err');
   const ok=document.getElementById('fp-ok');
   err.style.display='none';ok.style.display='none';
   if(!user){err.textContent='Informe seu usuário.';err.style.display='block';return;}
-  // Check if user exists
   const allUsers=await getApprovedUsers();
   const usr=Object.assign({},DEFAULT_USERS,allUsers)[user];
-  if(!usr){err.textContent=`Usuário "${user}" não encontrado.`;err.style.display='block';return;}
-  // Send email to admin
-  const params={
-    nome_solicitante:usr.label,
-    usuario:user,
-    data_hora:new Date().toLocaleString('pt-BR'),
-    tipo_solicitacao:'REDEFINIÇÃO DE SENHA',
-  };
-  try{
-    if(typeof emailjs!=='undefined')
-      await emailjs.send(EMAILJS_SERVICE,EMAILJS_TEMPLATE,params);
-  }catch{}
-  ok.textContent='Solicitação enviada! O administrador receberá um e-mail para redefinir sua senha.';
+  if(!usr || !usr.email){err.textContent='Usuário não encontrado ou sem e-mail cadastrado.';err.style.display='block';return;}
+
+  const code = generateResetCode();
+  _pwResetCode = { user, code, expiresAt: Date.now() + 15*60*1000 };
+
+  const params={nome_solicitante:usr.label,usuario:user,data_hora:new Date().toLocaleString('pt-BR'),tipo_solicitacao:'REDEFINIÇÃO DE SENHA',codigo_reset: code,email_usuario: usr.email};
+  try{ if(typeof emailjs!=='undefined') await emailjs.send(EMAILJS_SERVICE,EMAILJS_TEMPLATE,params); }catch(e){ console.warn('reset email err:',e); }
+
+  const novaSenha = prompt('Digite a nova senha (mínimo 8 caracteres, com letra maiúscula, minúscula e número):');
+  if(!novaSenha){ ok.textContent='Código enviado ao seu e-mail. Redefinição cancelada.'; ok.style.display='block'; return; }
+  if(novaSenha.length<8 || !/[A-Z]/.test(novaSenha) || !/[a-z]/.test(novaSenha) || !/\d/.test(novaSenha)){
+    err.textContent='A nova senha não atende aos critérios mínimos.'; err.style.display='block'; return;
+  }
+  const confirmaCodigo = prompt('Digite o código de 4 dígitos enviado ao seu e-mail:');
+  if(!_pwResetCode || _pwResetCode.user!==user || Date.now()>_pwResetCode.expiresAt || confirmaCodigo!==_pwResetCode.code){
+    err.textContent='Código inválido ou expirado.'; err.style.display='block'; return;
+  }
+
+  const novoHash = await hashSenha(novaSenha);
+  await updateApprovedUserPassword(user, novoHash);
+  _pwResetCode = null;
+  ok.textContent='Senha redefinida com sucesso. Faça login com a nova senha.';
   ok.style.display='block';
-  setTimeout(()=>showPanel('panel-login'),3000);
+  setTimeout(()=>showPanel('panel-login'),2000);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -3347,7 +3466,7 @@ function restoreVersion(idx){
   Object.assign(SX,v.custom);
   Object.keys(SE).forEach(p=>{if(PD[p])Object.assign(PD[p],SE[p]);});
   Object.keys(SX).forEach(p=>{if(!PD[p]){PD[p]=SX[p];}});
-  save();saveX();recalcAcum();buildPerBtns();buildKPI();buildDRE();
+  save();saveX();recalcAcum();buildPerBtns();renderCurrentView();
   toast(`Versão "${v.label}" restaurada!`);
 }
 function renderVersions(){
@@ -3427,38 +3546,31 @@ const _dashCharts={};
 function destroyDashChart(id){if(_dashCharts[id]){_dashCharts[id].destroy();delete _dashCharts[id];}}
 
 function buildDashboard(per){
-  // Populate period selector
   const sel=document.getElementById('dash-per-sel');
-  if(sel&&!per){
-    const cols=getOrderedCols();
-    sel.innerHTML=cols.map(p=>`<option value="${p}"${p===activePer?' selected':''}>${p}</option>`).join('');
-    per=sel.value||activePer;
+  const allowed=[...getMonthlyRealPeriods(),'Nova Meta Mês','Acum Plano 2026','Acum 2026 Real'].filter(p=>PD[p]);
+  if(sel){
+    const preferred = per || sel.value || getDashboardPeriod();
+    const current = allowed.includes(preferred) ? preferred : (allowed[0] || preferred);
+    sel.innerHTML=allowed.map(p=>`<option value="${p}"${p===current?' selected':''}>${getPeriodLabel(p)}</option>`).join('');
+    per=current;
   }
-  per=per||activePer;
-  const d=PD[per];if(!d)return;
-  document.getElementById('dash-periodo').textContent=per;
+  per=per||getDashboardPeriod();
+  if(PD[per] && PD[per]._t==='real'){
+    activePer=per;
+    localStorage.setItem('jr4_active_per', activePer);
+  }
+  const d=normalizePeriodData(PD[per]||{});
+  if(!PD[per]) return;
+  document.getElementById('dash-periodo').textContent=getPeriodLabel(per);
 
-  // ── KPI Cards grandes ──────────────────────────────────────
   const kpis=[
-    {l:'Faturamento',v:'R$ '+(d.fat/1e6).toFixed(2)+'M',s:'Total medido',
-     b:d.fat>0?'▲ Positivo':'▼ Zero',bc:d.fat>0?'b-green':'b-red',ac:'k-gold',icon:'💰'},
-    {l:'Receita Líquida',v:'R$ '+(d.rl/1e6).toFixed(2)+'M',s:fmtP(d.rl_p)+' do faturamento',
-     b:'',bc:'',ac:'k-gold',icon:'📈'},
-    {l:'Margem Contribuição',v:fmtP(d.mc_p),s:'R$ '+(d.mc/1e3).toFixed(0)+'k',
-     b:d.mc_p>=0.149?'✔ Meta atingida':'✘ Abaixo da meta',bc:d.mc_p>=0.149?'b-green':'b-red',
-     ac:d.mc_p>=0.149?'k-green':'k-red',icon:'📊'},
-    {l:'EBITDA',v:fmtP(d.ebt_p),s:'R$ '+(d.ebt/1e3).toFixed(0)+'k',
-     b:d.ebt>0?'▲ Positivo':'▼ Negativo',bc:d.ebt>0?'b-green':'b-red',
-     ac:d.ebt>0?'k-green':'k-red',icon:'🏦'},
-    {l:'% CSV Real',v:fmtP(d.csv_p),s:'Meta: ≤ 72%',
-     b:d.csv_p<=0.72?'✔ Dentro da meta':'✘ Acima da meta',bc:d.csv_p<=0.72?'b-green':'b-red',
-     ac:d.csv_p<=0.72?'k-green':'k-red',icon:'🔧'},
-    {l:'Resultado Líquido',v:'R$ '+(d.rliq/1e3).toFixed(0)+'k',s:fmtP(d.rliq_p)+' do faturamento',
-     b:d.rliq>0?'▲ Lucro':'▼ Prejuízo',bc:d.rliq>0?'b-green':'b-red',
-     ac:d.rliq>0?'k-green':'k-red',icon:'💹'},
-    {l:'Saldo Fluxo de Caixa',v:'R$ '+(d.fc/1e3).toFixed(0)+'k',s:'Após amortizações',
-     b:d.fc>0?'▲ Positivo':'▼ Negativo',bc:d.fc>0?'b-green':'b-red',
-     ac:d.fc>0?'k-green':'k-red',icon:'🏧'},
+    {l:'Faturamento',v:'R$ '+(d.fat/1e6).toFixed(2)+'M',s:getPeriodLabel(per),b:d.fat>0?'▲ Positivo':'▼ Zero',bc:d.fat>0?'b-green':'b-red',ac:'k-gold',icon:'💰'},
+    {l:'Receita Líquida',v:'R$ '+(d.rl/1e6).toFixed(2)+'M',s:fmtP(d.rl_p)+' do faturamento',b:'',bc:'',ac:'k-gold',icon:'📈'},
+    {l:'Margem Contribuição',v:fmtP(d.mc_p),s:'R$ '+(d.mc/1e3).toFixed(0)+'k',b:d.mc_p>=0.149?'✔ Meta atingida':'✘ Abaixo da meta',bc:d.mc_p>=0.149?'b-green':'b-red',ac:d.mc_p>=0.149?'k-green':'k-red',icon:'📊'},
+    {l:'EBITDA',v:fmtP(d.ebt_p),s:'R$ '+(d.ebt/1e3).toFixed(0)+'k',b:d.ebt>0?'▲ Positivo':'▼ Negativo',bc:d.ebt>0?'b-green':'b-red',ac:d.ebt>0?'k-green':'k-red',icon:'🏦'},
+    {l:'% CSV Real',v:fmtP(d.csv_p),s:'Meta: ≤ 72%',b:d.csv_p<=0.72?'✔ Dentro da meta':'✘ Acima da meta',bc:d.csv_p<=0.72?'b-green':'b-red',ac:d.csv_p<=0.72?'k-green':'k-red',icon:'🔧'},
+    {l:'Resultado Líquido',v:'R$ '+(d.rliq/1e3).toFixed(0)+'k',s:fmtP(d.rliq_p)+' do faturamento',b:d.rliq>0?'▲ Lucro':'▼ Prejuízo',bc:d.rliq>0?'b-green':'b-red',ac:d.rliq>0?'k-green':'k-red',icon:'💹'},
+    {l:'Saldo Fluxo de Caixa',v:'R$ '+(d.fc/1e3).toFixed(0)+'k',s:'Após amortizações',b:d.fc>0?'▲ Positivo':'▼ Negativo',bc:d.fc>0?'b-green':'b-red',ac:d.fc>0?'k-green':'k-red',icon:'🏧'},
     {l:'% Impostos',v:fmtP(d.imp_p),s:'Sobre faturamento',b:'',bc:'',ac:'k-gold',icon:'📋'},
   ];
   document.getElementById('dash-kpis').innerHTML=kpis.map(k=>`
@@ -3471,80 +3583,7 @@ function buildDashboard(per){
       <div class="ksub">${k.s}</div>
       ${k.b?`<div class="kbadge ${k.bc}" style="margin-top:8px">${k.b}</div>`:''}
     </div>`).join('');
-
-  // ── Gráfico barra: Fat vs RL vs EBITDA ────────────────────
-  destroyDashChart('bar');
-  const ctx1=document.getElementById('dash-bar')?.getContext('2d');
-  if(ctx1){
-    // Só colunas anuais visíveis (sem mensais)
-    const dashCols=getOrderedCols().filter(p=>!HC.includes(p)&&PD[p]&&!PD[p]._month);
-    const labels=dashCols.map(c=>c.replace('Ano ','').replace(' PE Plano','P').replace('PLANO ','P').replace('Nova Meta G4','Meta').replace('Plano ','P').replace('Acum ',''));
-    _dashCharts['bar']=new Chart(ctx1,{
-      type:'bar',
-      data:{labels,datasets:[
-        {label:'Fat.',data:dashCols.map(c=>+(PD[c]?.fat||0)/1e6),backgroundColor:'rgba(139,26,34,.8)',borderRadius:2},
-        {label:'RL',data:dashCols.map(c=>+(PD[c]?.rl||0)/1e6),backgroundColor:'rgba(201,162,39,.8)',borderRadius:2},
-        {label:'EBITDA',data:dashCols.map(c=>+(PD[c]?.ebt||0)/1e6),backgroundColor:'rgba(46,125,50,.8)',borderRadius:2},
-      ]},
-      options:{
-        responsive:true,maintainAspectRatio:false,
-        plugins:{
-          legend:{position:'top',labels:{font:{size:10},boxWidth:10}},
-          tooltip:{callbacks:{label:c=>c.dataset.label+': R$'+c.raw.toFixed(1)+'M'}}
-        },
-        scales:{
-          y:{ticks:{callback:v=>'R$'+v+'M',font:{size:9}},grid:{color:'rgba(0,0,0,.05)'}},
-          x:{ticks:{font:{size:9},maxRotation:45},grid:{display:false}}
-        }
-      }
-    });
-  }
-
-  // ── Donut: distribuição do faturamento ────────────────────
-  destroyDashChart('donut');
-  const ctx2=document.getElementById('dash-donut')?.getContext('2d');
-  if(ctx2&&d.fat){
-    const impostos=+d.imp||0,csv=+d.csv||0,pes=+d.pes||0,adm=+d.adm||0;
-    const outros=Math.max(0,d.fat-impostos-csv-pes-adm);
-    _dashCharts['donut']=new Chart(ctx2,{
-      type:'doughnut',
-      data:{
-        labels:['CSV','Impostos','Pessoal','Adm','Resultado'],
-        datasets:[{data:[csv,impostos,pes,adm,outros].map(v=>+(v/d.fat*100).toFixed(1)),
-          backgroundColor:['#8B1A22','#C9A227','#2E7D32','#6B6B6B','#1A1A1A'],
-          borderWidth:2,borderColor:'#fff'}]
-      },
-      options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
-        plugins:{tooltip:{callbacks:{label:c=>c.label+': '+c.raw+'%'}}}}
-    });
-  }
-
-  // ── Semáforo de metas ─────────────────────────────────────
-  const metas=[
-    {nome:'% CSV',val:d.csv_p,meta:0.72,dir:'lte',fmt:v=>fmtP(v)},
-    {nome:'% Margem Contribuição',val:d.mc_p,meta:0.149,dir:'gte',fmt:v=>fmtP(v)},
-    {nome:'% EBITDA',val:d.ebt_p,meta:0.06,dir:'gte',fmt:v=>fmtP(v)},
-    {nome:'% Impostos',val:d.imp_p,meta:0.11,dir:'lte',fmt:v=>fmtP(v)},
-    {nome:'Resultado Líquido',val:d.rliq,meta:0,dir:'gte',fmt:v=>'R$ '+(v/1e3).toFixed(0)+'k'},
-    {nome:'Fluxo de Caixa',val:d.fc,meta:0,dir:'gte',fmt:v=>'R$ '+(v/1e3).toFixed(0)+'k'},
-    {nome:'Faturamento',val:d.fat,meta:+(PD['Nova Meta Mês']?.fat||0),dir:'gte',fmt:v=>'R$ '+(v/1e6).toFixed(2)+'M'},
-  ];
-  document.getElementById('dash-semaforo').innerHTML=metas.map(m=>{
-    const ok=m.dir==='gte'?m.val>=m.meta:m.val<=m.meta;
-    const warn=m.dir==='gte'?m.val>=(m.meta*0.85):m.val<=(m.meta*1.15);
-    const led=ok?'verde':warn?'amarelo':'vermelho';
-    const status=ok?'✔ Meta atingida':warn?'⚡ Próximo da meta':'✘ Abaixo da meta';
-    return`<div class="semcard">
-      <div class="semled ${led}"></div>
-      <div class="seminfo">
-        <div class="semtitle">${m.nome}</div>
-        <div class="semval">${m.fmt(m.val)} ${m.meta?'| Meta: '+m.fmt(m.meta):''}</div>
-        <div style="font-size:.65rem;margin-top:2px;color:${led==='verde'?'var(--pos)':led==='amarelo'?'#F57F17':'var(--neg)'}">${status}</div>
-      </div>
-    </div>`;
-  }).join('');
-  // Build Meta vs Realizado progress bars
-  buildProgressoBars(d);
+  buildProgressoBars();
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -3586,6 +3625,30 @@ let FC = {
 };
 
 let editFC = false;
+
+const FC_LOCAL_KEY = 'jr_fc_state';
+function saveFCLocal(){
+  try{
+    localStorage.setItem(FC_LOCAL_KEY, JSON.stringify({
+      semanas: FC.semanas,
+      realizado: FC.realizado,
+      linhas: FC.linhas
+    }));
+  }catch(e){ console.warn('FC local save err:', e); }
+}
+function loadFCLocal(){
+  try{
+    const raw = localStorage.getItem(FC_LOCAL_KEY);
+    if(!raw) return;
+    const saved = JSON.parse(raw);
+    if(Array.isArray(saved?.semanas) && Array.isArray(saved?.linhas)){
+      FC.semanas = saved.semanas;
+      FC.realizado = saved.realizado || {};
+      FC.linhas = saved.linhas;
+    }
+  }catch(e){ console.warn('FC local load err:', e); }
+}
+loadFCLocal();
 
 // Resolver valor de célula (fórmula ou número)
 function fcResolve(v){
@@ -3726,9 +3789,10 @@ function buildFC(){
 
 function saveFCCell(li, semana, val){
   if(val===null||val===undefined||val==='')return;
-  const strVal=String(val);
+  const strVal=String(val).trim();
   const num=strVal.startsWith('=')?strVal:parseFloat(strVal.replace(/\./g,'').replace(',','.'))||0;
   FC.linhas[li].vals[semana]=num;
+  saveFCLocal();
   const body={linha_idx:li,semana,valor:strVal,descricao:FC.linhas[li].desc||'',tipo:FC.linhas[li].tipo||''};
   // Upsert: PATCH if exists, POST if new
   sbFetch(`fluxo_caixa?linha_idx=eq.${li}&semana=eq.${encodeURIComponent(semana)}`,{
@@ -3771,6 +3835,7 @@ function delFCLinha(li){
     }).catch(()=>{});
   });
   FC.linhas.splice(li,1);
+  saveFCLocal();
   saveFCMetadata();
   buildFC();
   toast(`Linha "${l.desc}" excluída!`);
@@ -3787,6 +3852,7 @@ function delFCSemana(si){
   // Remove from FC data
   FC.semanas.splice(si,1);
   FC.linhas.forEach(l=>{ delete l.vals[s]; });
+  saveFCLocal();
   // Save updated semanas list
   sbFetch('fluxo_caixa',{
     method:'POST',
@@ -3813,6 +3879,7 @@ function addFCSemana(){
   if(!label||!label.trim())return;
   const s=label.trim();
   FC.semanas.push(s);
+  saveFCLocal();
   // Persist the semanas list to Supabase (using linha_idx=-1 as metadata)
   sbFetch('fluxo_caixa',{
     method:'POST',
@@ -3829,6 +3896,7 @@ function addFCLinha(tipo){
   if(!desc||!desc.trim())return;
   const idx=tipo==='Credito'?FC.linhas.findIndex(l=>l.tipo==='total_deb'):FC.linhas.length;
   FC.linhas.splice(idx,0,{tipo,desc:desc.trim(),vals:{}});
+  saveFCLocal();
   // Save all lines metadata
   saveFCMetadata();
   buildFC();
@@ -3874,6 +3942,7 @@ async function loadFCFromSupabase(){
         FC.linhas[r.linha_idx].vals[r.semana]=r.valor;
       }
     });
+    saveFCLocal();
   }catch(e){console.warn('loadFC error:',e);}
 }
 
@@ -3886,41 +3955,70 @@ loadFCFromSupabase().then(()=>{
 // ══════════════════════════════════════════════════════════════
 // 5 — META VS REALIZADO COM BARRA DE PROGRESSO
 // ══════════════════════════════════════════════════════════════
-function buildProgressoBars(d){
+const KPI_RULES={
+  fat:{label:'Faturamento',direction:'up',kind:'valor',formatter:v=>'R$ '+(v/1e6).toFixed(2)+'M'},
+  rl:{label:'Receita Líquida',direction:'up',kind:'valor',formatter:v=>'R$ '+(v/1e6).toFixed(2)+'M'},
+  mc_p:{label:'Margem Contribuição',direction:'up',kind:'percent',formatter:v=>v.toFixed(1)+'%'},
+  ebt_p:{label:'EBITDA',direction:'up',kind:'percent',formatter:v=>v.toFixed(1)+'%'},
+  csv_p:{label:'% CSV',direction:'down',kind:'percent',formatter:v=>v.toFixed(1)+'%'},
+  rliq:{label:'Resultado Líquido',direction:'up',kind:'valor',formatter:v=>'R$ '+(v/1e3).toFixed(0)+'k'}
+};
+function calcProgressSafe(realizado, meta, direction='up'){
+  realizado=Number(realizado||0); meta=Number(meta||0);
+  if(!Number.isFinite(realizado)||!Number.isFinite(meta)||meta===0) return {pct:0,status:'neutro'};
+  if(direction==='up' && meta>0 && realizado<0) return {pct:0,status:'ruim'};
+  let pct = direction==='up' ? (realizado/meta)*100 : (meta/(realizado||meta))*100;
+  if(!Number.isFinite(pct)) pct=0;
+  pct=Math.max(0,Math.min(pct,200));
+  let status='ruim';
+  if(pct>=100) status='bom';
+  else if(pct>=90) status='atencao';
+  return {pct,status};
+}
+function calcVariance(realizado, meta){
+  realizado=Number(realizado||0); meta=Number(meta||0);
+  return {abs:realizado-meta,pct:meta?((realizado-meta)/meta)*100:0};
+}
+function getProgressColor(status){
+  if(status==='bom') return '#4CAF50';
+  if(status==='atencao') return '#FFC107';
+  return '#F44336';
+}
+function buildProgressoBars(){
   const el=document.getElementById('dash-progresso');
   if(!el)return;
-
-  const plano=PD['PLANO 2026']||{};
-  const acumReal=PD['Acum 2026 Real']||{};
-  const metaAnual=PD['Nova Meta G4']||{};
-
+  const acumReal=normalizePeriodData(PD['Acum 2026 Real']||{});
+  const metaAnual=normalizePeriodData(PD['Nova Meta G4']||{});
   const indicadores=[
-    {nome:'Faturamento',real:+acumReal.fat||0,plano:+plano.fat||0,meta:+metaAnual.fat||0,fmt:v=>'R$ '+(v/1e6).toFixed(2)+'M'},
-    {nome:'Receita Líquida',real:+acumReal.rl||0,plano:+plano.rl||0,meta:+metaAnual.rl||0,fmt:v=>'R$ '+(v/1e6).toFixed(2)+'M'},
-    {nome:'Margem Contribuição',real:+(acumReal.mc_p||0)*100,plano:+(plano.mc_p||0)*100,meta:14.9,fmt:v=>v.toFixed(1)+'%'},
-    {nome:'EBITDA',real:+(acumReal.ebt_p||0)*100,plano:+(plano.ebt_p||0)*100,meta:6,fmt:v=>v.toFixed(1)+'%'},
-    {nome:'% CSV',real:+(acumReal.csv_p||0)*100,plano:+(plano.csv_p||0)*100,meta:72,fmt:v=>v.toFixed(1)+'%',inverso:true},
-    {nome:'Resultado Líquido',real:+acumReal.rliq||0,plano:+plano.rliq||0,meta:+metaAnual.rliq||0,fmt:v=>'R$ '+(v/1e3).toFixed(0)+'k'},
+    {key:'fat', real:acumReal.fat, meta:metaAnual.fat},
+    {key:'rl', real:acumReal.rl, meta:metaAnual.rl},
+    {key:'mc_p', real:(acumReal.mc_p||0)*100, meta:14.9},
+    {key:'ebt_p', real:(acumReal.ebt_p||0)*100, meta:6},
+    {key:'csv_p', real:(acumReal.csv_p||0)*100, meta:72},
+    {key:'rliq', real:acumReal.rliq, meta:metaAnual.rliq}
   ];
 
   el.innerHTML=indicadores.map(ind=>{
-    const meta=ind.meta||ind.plano||1;
-    const pct=meta?Math.min(Math.abs(ind.real/meta)*100,100):0;
-    const ok=ind.inverso?(ind.real<=meta):(ind.real>=meta*0.85);
-    const cor=ind.inverso
-      ?(ind.real<=meta?'#4CAF50':ind.real<=meta*1.15?'#FFC107':'#F44336')
-      :(ind.real>=meta?'#4CAF50':ind.real>=meta*0.85?'#FFC107':'#F44336');
+    const rule=KPI_RULES[ind.key];
+    const prog=calcProgressSafe(ind.real, ind.meta, rule.direction);
+    const variance=calcVariance(ind.real, ind.meta);
+    const cor=getProgressColor(prog.status);
+    const desvioFmt = rule.kind==='percent' ? variance.abs.toFixed(1)+' p.p.' : rule.formatter(variance.abs);
     return`<div class="progress-card">
       <div class="progress-title">
-        <span>${ind.nome}</span>
-        <span style="font-family:'Roboto Mono',monospace;font-size:.72rem;color:${cor}">${ind.fmt(ind.real)}</span>
+        <span>${rule.label}</span>
+        <span style="font-family:'Roboto Mono',monospace;font-size:.72rem;color:${cor}">${rule.formatter(ind.real)}</span>
       </div>
       <div class="progress-bar-bg">
-        <div class="progress-bar-fill" style="width:${pct.toFixed(1)}%;background:${cor}"></div>
+        <div class="progress-bar-fill" style="width:${prog.pct.toFixed(1)}%;background:${cor}"></div>
       </div>
       <div class="progress-vals">
-        <span>Realizado: <strong>${ind.fmt(ind.real)}</strong></span>
-        <span>Meta: ${ind.fmt(meta)} (${pct.toFixed(0)}%)</span>
+        <span>Realizado: <strong>${rule.formatter(ind.real)}</strong></span>
+        <span>Meta: ${rule.formatter(ind.meta)} (${prog.pct.toFixed(0)}%)</span>
+      </div>
+      <div class="progress-vals">
+        <span>Desvio: ${desvioFmt}</span>
+        <span>${variance.pct.toFixed(1)}%</span>
       </div>
     </div>`;
   }).join('');
@@ -3931,9 +4029,9 @@ function buildProgressoBars(d){
 // ══════════════════════════════════════════════════════════════
 function exportDashboardPDF(){
   const per=document.getElementById('dash-per-sel')?.value||activePer;
-  const d=PD[per];if(!d){toast('Selecione um período','error');return;}
-  const plano=PD['PLANO 2026']||{};
-  const acumReal=PD['Acum 2026 Real']||{};
+  const d=normalizePeriodData(PD[per]||{});if(!PD[per]){toast('Selecione um período','error');return;}
+  const plano=normalizePeriodData(PD['PLANO 2026']||{});
+  const acumReal=normalizePeriodData(PD['Acum 2026 Real']||{});
   const data=new Date().toLocaleDateString('pt-BR');
 
   const html=`<!DOCTYPE html><html lang="pt-BR">
@@ -3970,7 +4068,7 @@ function exportDashboardPDF(){
   <div>
     <h1>📊 RELATÓRIO EXECUTIVO — DRE</h1>
     <p>JR Santa Fé Pavimentação e Construções Ltda · CNPJ: 65.472.078/0001-54</p>
-    <p>Período: ${per} · Gerado em: ${data}</p>
+    <p>Período: ${getPeriodLabel(per)} · Gerado em: ${data}</p>
   </div>
 </div>
 
@@ -4051,16 +4149,16 @@ function exportDashboardPDF(){
 // ══════════════════════════════════════════════════════════════
 async function sendWeeklyReport(){
   const per=document.getElementById('dash-per-sel')?.value||activePer;
-  const d=PD[per];if(!d){toast('Selecione um período','error');return;}
-  const acumReal=PD['Acum 2026 Real']||{};
+  const d=normalizePeriodData(PD[per]||{});if(!PD[per]){toast('Selecione um período','error');return;}
+  const acumReal=normalizePeriodData(PD['Acum 2026 Real']||{});
 
   toast('Enviando relatório...');
   const params={
     nome_solicitante:'Sistema DRE JR (Automático)',
     usuario:'relatório-semanal',
     data_hora:new Date().toLocaleString('pt-BR'),
-    tipo_solicitacao:'RELATÓRIO SEMANAL — '+per+'\n\n'+
-      '📊 INDICADORES '+per+':\n'+
+    tipo_solicitacao:'RELATÓRIO SEMANAL — '+getPeriodLabel(per)+'\n\n'+
+      '📊 INDICADORES '+getPeriodLabel(per)+':\n'+
       '• Faturamento: R$ '+(+d.fat/1e6).toFixed(2)+'M\n'+
       '• Receita Líquida: R$ '+(+d.rl/1e6).toFixed(2)+'M | '+fmtP(d.rl_p)+'\n'+
       '• % CSV: '+fmtP(d.csv_p)+' (Meta ≤72%)\n'+
