@@ -953,7 +953,6 @@ async function sbFetch(path, opts={}){
     ...(opts.headers||{})
   };
   if(opts.method==='POST'){
-    // Upsert requires resolution=merge-duplicates
     headers['Prefer'] = opts.prefer ? opts.prefer : 'return=minimal';
   } else if(opts.method==='PATCH'){
     headers['Prefer'] = 'return=minimal';
