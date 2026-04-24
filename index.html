@@ -1561,7 +1561,9 @@ async function loadBalFromSupabase(){
       if(row_id==='__cols__')return;
       const r=byId[row_id];
       if(r&&r.t==='v'&&col_idx<BAL_COLS.length-1){
-        r.v[col_idx]=valor;
+        // Convert stored number back to PT-BR formatted string
+        const n=parseFloat(String(valor).replace(/\./g,'').replace(',','.'));
+        r.v[col_idx]=isNaN(n)||n===0?'0':n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
       }
     });
     buildBal();
@@ -2284,9 +2286,13 @@ function buildBal(){
         const nm=parsePT(val);
         return`<td style="text-align:right;${nm<0?"color:var(--neg)":""}">${val}</td>`;
       }
+      // Format editable values as PT-BR
+      const nm=parsePT(val);
+      const disp=(!val||val===''||val==='0'||val==='-'||val==='—')?'–':fmtBal(nm);
+      const colorStyle=nm<0?"color:var(--neg)":"";
       if(editBal&&CU?.role!=="viewer")
-        return`<td class="td-edit" style="text-align:right" title="Clique para editar" onclick="inlineEditBal(this,${ri},${ci})">${val}</td>`;
-      return`<td style="text-align:right">${val}</td>`;
+        return`<td class="td-edit" style="text-align:right;${colorStyle}" title="Clique para editar" onclick="inlineEditBal(this,${ri},${ci})">${disp}</td>`;
+      return`<td style="text-align:right;${colorStyle}">${disp}</td>`;
     }).join("");
     return`<tr class="${rc}"><td>${r.lbl}</td>${cols}</tr>`;
   }).join("");
@@ -2304,7 +2310,10 @@ function inlineEditBal(td,ri,ci){
   if(td.querySelector("input"))return;
   const r=BAL_ROWS[ri];if(!r||r.t!=="v")return;
   const v=r.v[ci];
-  td.innerHTML="<input class=\"ci\" type=\"text\" value=\""+v+"\" style=\"width:120px;text-align:right\" onkeydown=\"confEditBal(event,"+ri+","+ci+",this)\" onblur=\"saveEditBal("+ri+","+ci+",this)\">";
+  const nm=parsePT(v);
+  // Show raw number in PT-BR format for editing
+  const editVal=nm===0?'':nm.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  td.innerHTML=`<input class="ci" type="text" value="${editVal}" style="width:130px;text-align:right" onkeydown="confEditBal(event,${ri},${ci},this)" onblur="saveEditBal(${ri},${ci},this)">`;
   const inp=td.querySelector("input");inp.focus();inp.select();
 }
 function confEditBal(e,ri,ci,inp){
@@ -2314,23 +2323,29 @@ function confEditBal(e,ri,ci,inp){
 }
 function saveEditBal(ri,ci,inp){
   const r=BAL_ROWS[ri];if(!r||r.t!=="v")return;
-  const old=r.v[ci];const nv=inp.value.trim();
+  const raw=inp.value.trim();
+  // Parse PT-BR: "1.234.567,89" → "1234567.89" → number
+  const parsed=raw===''?0:parseFloat(raw.replace(/\./g,'').replace(',','.'));
+  const nv=isNaN(parsed)?0:parsed;
+  const old=parsePT(r.v[ci]);
   if(nv===old){buildBal();return;}
-  r.v[ci]=nv;
+  // Store as formatted string for display consistency
+  r.v[ci]=nv===0?'0':nv.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const valorSave=String(nv);
   // PATCH if exists, POST if new
   sbFetch(`balanco_dados?row_id=eq.${encodeURIComponent(r.id)}&col_idx=eq.${ci}`,{
     method:'PATCH',
-    body:JSON.stringify({valor:nv})
+    body:JSON.stringify({valor:valorSave})
   }).then(res=>{
     if(res===null){
       return sbFetch('balanco_dados',{
         method:'POST',
-        body:JSON.stringify({row_id:r.id,col_idx:ci,valor:nv})
+        body:JSON.stringify({row_id:r.id,col_idx:ci,valor:valorSave})
       });
     }
   }).catch(e=>console.warn('balanco save err:',e));
-  pushH({type:"edit",user:CU.label,ts:ts(),icon:"✏️",period:"Balanço",lbl:r.lbl,oldV:old,newV:nv});
-  buildBal();toast("Atualizado!");
+  pushH({type:"edit",user:CU.label,ts:ts(),icon:"✏️",period:"Balanço",lbl:r.lbl,oldV:fmtBal(old),newV:fmtBal(nv)});
+  buildBal();toast("💾 Balanço atualizado!");
 }
 function focusNextBal(inp){
   const td=inp.closest("td");const tr=td.closest("tr");
