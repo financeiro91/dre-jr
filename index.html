@@ -1623,10 +1623,11 @@ function recomputePct(per){
     d.rl_p = fat ? d.rl/fat : 0;
   }
 
-  // Margem de Contribuição = rl - csv - uf
+  // Margem de Contribuição = rl - csv + uf (Saldo Usina/Frota é somado!)
+  // Fórmula planilha: =BZ14-BZ16+BZ18
   {
     const rl=+d.rl||0, csv=+d.csv||0, uf=+d.uf||0;
-    d.mc = rl - csv - uf;
+    d.mc = rl - csv + uf;
     d.mc_p = fat ? d.mc/fat : 0;
   }
 
@@ -1637,7 +1638,7 @@ function recomputePct(per){
     d.ebt_p = fat ? d.ebt/fat : 0;
   }
 
-  // Resultado Líquido = ebt - rfin - csir
+  // Resultado Líquido = EBITDA - rfin - csir  (não usa rliq intermediário)
   {
     const ebt=+d.ebt||0, rfin=+d.rfin||0, csir=+d.csir||0;
     d.rliq = ebt - rfin - csir;
@@ -1650,10 +1651,11 @@ function recomputePct(per){
     d.fc = rliq - amort - mutuo;
   }
 
-  // Breakeven Operacional = (pes + adm) / mc_p
-  // Para colunas mensais, anualiza (×12) para comparar com valores anuais
+  // Breakeven Operacional = (pes + adm) / mc_p  onde mc_p = mc/fat (faturamento)
+  // Fórmula planilha: =(BZ23+BZ25)/BZ22  onde BZ22=mc/fat
   {
-    const pes=+d.pes||0, adm=+d.adm||0, mc_p=+d.mc_p||0;
+    const pes=+d.pes||0, adm=+d.adm||0;
+    const mc_p = fat ? (+d.mc||0)/fat : 0;
     d.bkop = mc_p ? (pes + adm) / mc_p : 0;
   }
 
@@ -1663,55 +1665,52 @@ function recomputePct(per){
     d.ncg = estq + crec - cpag;
   }
 
-  // NCG mês anterior — buscar do período real anterior
+  // NCG mês anterior = variação % = (NCG_atual - NCG_ant) / NCG_atual
+  // Busca NCG do período anterior real
   {
     const isMonth = !!d._month;
-    if(isMonth){
-      // Encontrar período real anterior cronologicamente
-      const realCols = Object.keys(PD).filter(k=>PD[k]._t==='real'&&PD[k]._month&&k!==per);
-      // Ordenar por posição na lista de colunas
-      const ordered = getOrderedCols ? getOrderedCols().filter(k=>realCols.includes(k)) : realCols;
-      const myIdx = getOrderedCols ? getOrderedCols().indexOf(per) : -1;
-      const prevReal = ordered.filter(k=>{
-        const idx = getOrderedCols ? getOrderedCols().indexOf(k) : -1;
-        return idx < myIdx;
-      }).slice(-1)[0];
-      d.ncg_ant = prevReal ? (+PD[prevReal].ncg||0) : (+PD['Ano 2025 Real']?.ncg || 0);
+    if(isMonth && typeof getOrderedCols === 'function'){
+      const ordered = getOrderedCols();
+      const myIdx = ordered.indexOf(per);
+      const prevReal = ordered.slice(0, myIdx).reverse()
+        .find(k=>PD[k]&&PD[k]._t==='real'&&PD[k]._month);
+      const prevNCG = prevReal ? (+PD[prevReal].ncg||0) : 0;
+      const ncg = +d.ncg||0;
+      // Armazena como variação % igual à planilha: (ncg - ncg_ant) / ncg
+      d.ncg_ant = prevNCG;
+      d.ncg_var = ncg ? (ncg - prevNCG) / ncg : 0;
     }
   }
 
-  // Fluxo de Caixa Operacional = fc - (ncg - ncg_ant) + caixa + banco
+  // Fluxo de Caixa Operacional = caixa + banco + estq + crec - cpag
+  // Fórmula exata da planilha: BZ45+BZ46+BZ40+BZ41-BZ42
   {
-    const fc=+d.fc||0, ncg=+d.ncg||0, ncg_ant=+d.ncg_ant||0;
     const caixa=+d.caixa||0, banco=+d.banco||0;
-    d.fcop = fc - (ncg - ncg_ant) + caixa + banco;
+    const estq=+d.estq||0, crec=+d.crec||0, cpag=+d.cpag||0;
+    d.fcop = caixa + banco + estq + crec - cpag;
   }
 
-  // Endividamento Líquido = (div12 + div12p) / EBITDA anual
-  // Para meses: EBITDA × 12; para anos: EBITDA direto
+  // Endividamento Líquido = (div12 + div12p) / (ebt × 2)
+  // Fórmula planilha: (BZ48+BZ49-BZ50)/((BZ28)*2)
   {
-    const div12=+d.div12||0, div12p=+d.div12p||0;
+    const div12=+d.div12||0, div12p=+d.div12p||0, mutuo_saldo=0;
     const ebt=+d.ebt||0;
-    const isMonth = !!d._month;
-    const ebtAnual = isMonth ? ebt*12 : ebt;
-    d.endliq = ebtAnual ? (div12 + div12p) / ebtAnual : 0;
+    d.endliq = ebt ? (div12 + div12p - mutuo_saldo) / (ebt * 2) : 0;
   }
 
-  // Obrigação anual da dívida = div12 / EBITDA anual
+  // Obrigação anual da dívida = div12 / ((ebt/12) × 8)
+  // Fórmula planilha: BZ48/(((BZ28/12)*8))
   {
-    const div12=+d.div12||0;
-    const ebt=+d.ebt||0;
-    const isMonth = !!d._month;
-    const ebtAnual = isMonth ? ebt*12 : ebt;
-    d.oban = ebtAnual ? div12 / ebtAnual : 0;
+    const div12=+d.div12||0, ebt=+d.ebt||0;
+    d.oban = ebt ? div12 / ((ebt/12)*8) : 0;
   }
 
-  // Breakeven Negócio = (pes + adm + rfin + csir + amort + mutuo) / mc_p (valores mensais/anuais)
+  // Breakeven Negócio = (pes + adm + rfin + amort) / mc_p
+  // Fórmula planilha: =(BZ23+BZ25+BZ30+BZ34)/BZ22  onde BZ22=mc/fat
   {
-    const pes=+d.pes||0, adm=+d.adm||0, rfin=+d.rfin||0;
-    const csir=+d.csir||0, amort=+d.amort||0, mutuo=+d.mutuo||0;
-    const mc_p=+d.mc_p||0;
-    d.bkneg = mc_p ? (pes + adm + rfin + csir + amort + mutuo) / mc_p : 0;
+    const pes=+d.pes||0, adm=+d.adm||0, rfin=+d.rfin||0, amort=+d.amort||0;
+    const mc_p = fat ? (+d.mc||0)/fat : 0;
+    d.bkneg = mc_p ? (pes + adm + rfin + amort) / mc_p : 0;
   }
 
   // ── % calculados ──────────────────────────────────────────
