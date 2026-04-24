@@ -2440,14 +2440,13 @@ const SI={Realizada:'s0','Em andamento':'s1',Atrasada:'s2',Cancelada:'s3','Falta
 function buildPlano(rows){
   const canEdit=editPlano&&CU?.role!=='viewer';
   document.getElementById('plano-h').innerHTML=`<tr>
-    <th style="width:44px;text-align:center">Nº</th>
+    <th style="width:60px;text-align:center">Nº</th>
     <th style="text-align:left;min-width:320px">Ação / Etapa</th>
     <th style="min-width:110px;text-align:left">Responsável</th>
     <th style="min-width:95px">Início</th>
     <th style="min-width:95px">Término</th>
     <th style="min-width:140px">Status / Farol</th>
     <th style="text-align:left;min-width:200px">Observação da Etapa</th>
-    ${canEdit?'<th style="width:36px"></th>':''}
   </tr>`;
   document.getElementById('plano-b').innerHTML=rows.map((r)=>{
     const ri=PLANO.indexOf(r);
@@ -2463,7 +2462,10 @@ function buildPlano(rows){
       </tr>`;
     }
     return`<tr class="tr-editing">
-      <td style="text-align:center;color:var(--jr-gray2)">${r[0]}</td>
+      <td style="text-align:center;white-space:nowrap">
+        <span style="color:var(--jr-gray2);margin-right:4px">${r[0]}</span>
+        <button onclick="delPlanoRow(${ri})" title="Excluir ação" style="background:rgba(180,0,0,.85);color:#fff;border:none;border-radius:3px;font-size:.65rem;padding:2px 5px;cursor:pointer;vertical-align:middle">✕</button>
+      </td>
       <td class="td-edit td-plano" onclick="inlineEditPlanoCell(this,${ri},1)" title="Clique para editar">
         <span style="color:var(--jr-dark)">${r[1]||'—'}</span>
       </td>
@@ -2483,9 +2485,6 @@ function buildPlano(rows){
       </td>
       <td class="td-edit td-plano" onclick="inlineEditPlanoCell(this,${ri},6)" title="Clique para editar">
         <span style="color:var(--jr-gray);font-size:0.76rem">${r[6]||'—'}</span>
-      </td>
-      <td style="padding:2px 4px;text-align:center">
-        <button onclick="delPlanoRow(${ri})" title="Excluir ação" style="background:rgba(180,0,0,.8);color:#fff;border:none;border-radius:3px;font-size:.7rem;padding:3px 7px;cursor:pointer">✕</button>
       </td>
     </tr>`;
   }).join('');
