@@ -952,10 +952,14 @@ async function sbFetch(path, opts={}){
     'Content-Type': 'application/json',
     ...(opts.headers||{})
   };
-  if(opts.method==='POST') headers['Prefer']=opts.prefer||'return=minimal';
-  if(opts.method==='PATCH') headers['Prefer']=opts.prefer||'return=minimal';
-  if(opts.method==='DELETE') headers['Prefer']='return=minimal';
-  else if(opts.prefer) headers['Prefer']=opts.prefer;
+  if(opts.method==='POST'){
+    // Upsert requires resolution=merge-duplicates
+    headers['Prefer'] = opts.prefer ? opts.prefer : 'return=minimal';
+  } else if(opts.method==='PATCH'){
+    headers['Prefer'] = 'return=minimal';
+  } else if(opts.method==='DELETE'){
+    headers['Prefer'] = 'return=minimal';
+  }
   const res = await fetch(`${SB_URL}/rest/v1/${path}`, {
     method: opts.method||'GET',
     body: opts.body||undefined,
@@ -1426,23 +1430,26 @@ const save=()=>{
   Object.keys(SE).forEach(periodo=>{
     Object.keys(SE[periodo]).forEach(campo=>{
       sbFetch('dre_dados',{
-        method:'POST',
-        prefer:'resolution=merge-duplicates',
-        body:JSON.stringify({periodo,campo,valor:SE[periodo][campo]})
+        method:'PATCH',
+        body:JSON.stringify({valor:SE[periodo][campo]})
+      }).then(r=>{
+        if(r===null) sbFetch('dre_dados',{method:'POST',body:JSON.stringify({periodo,campo,valor:SE[periodo][campo]})}).catch(()=>{});
       }).catch(()=>{});
     });
   });
 };
 const saveX=()=>{
   localStorage.setItem('jr4_x',JSON.stringify(SX));
-  // Save custom periods to Supabase — including metadata
   Object.keys(SX).forEach(periodo=>{
     const allFields={...SX[periodo]};
     Object.keys(allFields).forEach(campo=>{
-      sbFetch('dre_dados',{
-        method:'POST',
-        prefer:'resolution=merge-duplicates',
-        body:JSON.stringify({periodo,campo,valor:allFields[campo]??''})
+      const enc=encodeURIComponent(periodo);
+      const encF=encodeURIComponent(campo);
+      sbFetch(`dre_dados?periodo=eq.${enc}&campo=eq.${encF}`,{
+        method:'PATCH',
+        body:JSON.stringify({valor:allFields[campo]??''})
+      }).then(r=>{
+        if(r===null) sbFetch('dre_dados',{method:'POST',body:JSON.stringify({periodo,campo,valor:allFields[campo]??''})}).catch(()=>{});
       }).catch(()=>{});
     });
   });
@@ -1990,11 +1997,10 @@ function confEditBlur(per,rowId,inp){
   setTimeout(()=>{if(document.activeElement!==inp)saveEditDRE(per,rowId,inp);},120);
 }
 function saveEditDRE(per,rowId,inp){
-  // Parse PT-BR format: "1.234.567,89" → 1234567.89
   const raw=inp.value.trim()
     .replace(/\s/g,'')
-    .replace(/\.(?=\d{3})/g,'')   // remove thousand separators (dots before 3 digits)
-    .replace(',','.');              // decimal comma → dot
+    .replace(/\.(?=\d{3})/g,'')
+    .replace(',','.');
   const nv=parseFloat(raw);
   if(isNaN(nv)){buildDRE();return;}
   const old=PD[per][rowId];
@@ -2004,14 +2010,21 @@ function saveEditDRE(per,rowId,inp){
   if(SX[per]) SX[per][rowId]=nv;
   localStorage.setItem('jr4_e',JSON.stringify(SE));
   localStorage.setItem('jr4_x',JSON.stringify(SX));
-  // Upsert to Supabase
-  sbFetch('dre_dados',{
-    method:'POST',
-    prefer:'resolution=merge-duplicates',
-    body:JSON.stringify({periodo:per,campo:rowId,valor:nv})
-  }).then(()=>{
-    console.log(`✅ DRE salvo: ${per} / ${rowId} = ${nv}`);
-  }).catch(e=>console.warn('DRE save err:',e));
+  // PATCH first (update if exists), POST if no rows matched
+  const enc=encodeURIComponent(per);
+  const encF=encodeURIComponent(rowId);
+  sbFetch(`dre_dados?periodo=eq.${enc}&campo=eq.${encF}`,{
+    method:'PATCH',
+    body:JSON.stringify({valor:nv})
+  }).then(r=>{
+    if(r===null){
+      return sbFetch('dre_dados',{
+        method:'POST',
+        body:JSON.stringify({periodo:per,campo:rowId,valor:nv})
+      });
+    }
+  }).then(()=>console.log(`✅ DRE salvo: ${per}/${rowId}=${nv}`))
+    .catch(e=>console.warn('DRE save err:',e));
   recomputePct(per);
   if(PD[per]._month)recalcAcum();
   const lbl=DROWS.find(r=>r.id===rowId)?.label||rowId;
@@ -2096,16 +2109,11 @@ function openAddRow(tab){
 // Renumber PLANO sequentially after any insert/delete
 function renumberPlano(){
   PLANO.forEach((r,i)=>{ r[0]=i+1; });
-  // Save all rows to Supabase after renumbering
   PLANO.forEach(r=>{
-    sbFetch('plano_acao',{
-      method:'POST',
-      prefer:'resolution=merge-duplicates',
-      body:JSON.stringify({
-        numero:r[0],acao:r[1],responsavel:r[2],
-        inicio:r[3],termino:r[4],status:r[5],observacao:r[6]
-      })
-    }).catch(e=>console.warn('plano renumber save err:',e));
+    const body={numero:r[0],acao:r[1],responsavel:r[2],inicio:r[3],termino:r[4],status:r[5],observacao:r[6]};
+    sbFetch(`plano_acao?numero=eq.${r[0]}`,{method:'PATCH',body:JSON.stringify(body)})
+      .then(res=>{ if(res===null) sbFetch('plano_acao',{method:'POST',body:JSON.stringify(body)}).catch(()=>{}); })
+      .catch(e=>console.warn('plano renumber err:',e));
   });
 }
 
@@ -2309,11 +2317,17 @@ function saveEditBal(ri,ci,inp){
   const old=r.v[ci];const nv=inp.value.trim();
   if(nv===old){buildBal();return;}
   r.v[ci]=nv;
-  // Save to Supabase
-  sbFetch('balanco_dados',{
-    method:'POST',
-    prefer:'resolution=merge-duplicates',
-    body:JSON.stringify({row_id:r.id,col_idx:ci,valor:nv})
+  // PATCH if exists, POST if new
+  sbFetch(`balanco_dados?row_id=eq.${encodeURIComponent(r.id)}&col_idx=eq.${ci}`,{
+    method:'PATCH',
+    body:JSON.stringify({valor:nv})
+  }).then(res=>{
+    if(res===null){
+      return sbFetch('balanco_dados',{
+        method:'POST',
+        body:JSON.stringify({row_id:r.id,col_idx:ci,valor:nv})
+      });
+    }
   }).catch(e=>console.warn('balanco save err:',e));
   pushH({type:"edit",user:CU.label,ts:ts(),icon:"✏️",period:"Balanço",lbl:r.lbl,oldV:old,newV:nv});
   buildBal();toast("Atualizado!");
@@ -2346,22 +2360,23 @@ function confirmAddColBal(){
 }
 
 function saveBalToSupabase(){
-  // Save BAL_COLS as special row
-  sbFetch('balanco_dados',{
-    method:'POST',
-    prefer:'resolution=merge-duplicates',
-    body:JSON.stringify({row_id:'__cols__',col_idx:0,valor:JSON.stringify(BAL_COLS)})
+  // Save BAL_COLS list (PATCH/POST)
+  sbFetch('balanco_dados?row_id=eq.__cols__&col_idx=eq.0',{
+    method:'PATCH',
+    body:JSON.stringify({valor:JSON.stringify(BAL_COLS)})
+  }).then(r=>{
+    if(r===null) sbFetch('balanco_dados',{method:'POST',body:JSON.stringify({row_id:'__cols__',col_idx:0,valor:JSON.stringify(BAL_COLS)})}).catch(()=>{});
   }).catch(()=>{});
   // Save all editable values
-  const ci=BAL_COLS.length-2; // last real column index (0-based)
   BAL_ROWS.forEach(r=>{
     if(r.t!=='v')return;
     r.v.forEach((val,idx)=>{
       if(!val||val==='0')return;
-      sbFetch('balanco_dados',{
-        method:'POST',
-        prefer:'resolution=merge-duplicates',
-        body:JSON.stringify({row_id:r.id,col_idx:idx,valor:String(val)})
+      sbFetch(`balanco_dados?row_id=eq.${encodeURIComponent(r.id)}&col_idx=eq.${idx}`,{
+        method:'PATCH',
+        body:JSON.stringify({valor:String(val)})
+      }).then(res=>{
+        if(res===null) sbFetch('balanco_dados',{method:'POST',body:JSON.stringify({row_id:r.id,col_idx:idx,valor:String(val)})}).catch(()=>{});
       }).catch(()=>{});
     });
   });
@@ -2481,15 +2496,16 @@ function savePlanoField(ri,ci,val){
   const old=PLANO[ri][ci];
   if(val===old||val===''&&old==='—'){buildPlano(PLANO);return;}
   PLANO[ri][ci]=val||'—';
-  // Save full row to Supabase
   const r=PLANO[ri];
-  sbFetch('plano_acao',{
-    method:'POST',
-    prefer:'resolution=merge-duplicates',
-    body:JSON.stringify({
-      numero:r[0],acao:r[1],responsavel:r[2],
-      inicio:r[3],termino:r[4],status:r[5],observacao:r[6]
-    })
+  const body={numero:r[0],acao:r[1],responsavel:r[2],inicio:r[3],termino:r[4],status:r[5],observacao:r[6]};
+  // PATCH if exists, POST if new
+  sbFetch(`plano_acao?numero=eq.${r[0]}`,{
+    method:'PATCH',
+    body:JSON.stringify(body)
+  }).then(res=>{
+    if(res===null){
+      return sbFetch('plano_acao',{method:'POST',body:JSON.stringify(body)});
+    }
   }).catch(e=>console.warn('plano save err:',e));
   pushH({type:'edit',user:CU.label,ts:ts(),icon:'✏️',period:'Plano MASP',lbl:String(PLANO[ri][1]).slice(0,50),oldV:String(old),newV:String(val)});
   buildPlano(PLANO);toast('Atualizado!');
@@ -3189,23 +3205,19 @@ function saveFCCell(li, semana, val){
   const strVal=String(val);
   const num=strVal.startsWith('=')?strVal:parseFloat(strVal.replace(/\./g,'').replace(',','.'))||0;
   FC.linhas[li].vals[semana]=num;
-  const body={
-    linha_idx:li,
-    semana,
-    valor:strVal,
-    descricao:FC.linhas[li].desc||'',
-    tipo:FC.linhas[li].tipo||''
-  };
-  // Use POST with upsert (requires unique constraint on linha_idx,semana)
-  sbFetch('fluxo_caixa',{
-    method:'POST',
-    prefer:'resolution=merge-duplicates',
-    body:JSON.stringify(body)
-  }).then(()=>{
+  const body={linha_idx:li,semana,valor:strVal,descricao:FC.linhas[li].desc||'',tipo:FC.linhas[li].tipo||''};
+  // PATCH if exists, POST if new
+  sbFetch(`fluxo_caixa?linha_idx=eq.${li}&semana=eq.${encodeURIComponent(semana)}`,{
+    method:'PATCH',
+    body:JSON.stringify({valor:strVal})
+  }).then(res=>{
+    if(res===null){
+      return sbFetch('fluxo_caixa',{method:'POST',body:JSON.stringify(body)});
+    }
     console.log(`✅ FC salvo: linha ${li}, semana ${semana}`);
   }).catch(e=>{
     console.warn('FC save err:',e);
-    toast('Erro ao salvar — verifique conexão','error');
+    toast('Erro ao salvar','error');
   });
   buildFC();
   toast('💾 Salvo!');
