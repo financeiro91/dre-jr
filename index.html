@@ -242,7 +242,15 @@ select.sel:focus{outline:none;border-color:var(--jr-gold);}
 .tbtn.active{background:#FFF8E1;border-color:var(--jr-gold);color:var(--jr-gold3);}
 
 /* ── MAIN TABLE ────────────────────────────────────────────────── */
-.twrap{overflow-x:auto;border:1px solid var(--jr-gelo3);border-radius:3px;box-shadow:0 1px 6px rgba(0,0,0,.06);}
+.twrap{
+  overflow-x:auto;
+  overflow-y:auto;
+  max-height:calc(100vh - 240px);
+  border:1px solid var(--jr-gelo3);
+  border-radius:3px;
+  box-shadow:0 1px 6px rgba(0,0,0,.06);
+  position:relative;
+}
 table{width:100%;border-collapse:collapse;}
 
 /* TH */
@@ -271,10 +279,27 @@ tbody td{
 }
 tbody td:first-child{
   text-align:left;color:var(--jr-dark);font-family:'Open Sans',sans-serif;font-size:0.88rem;
-  position:sticky;left:0;background:var(--jr-white);z-index:1;
+  position:sticky;left:0;background:var(--jr-white);z-index:2;
+}
+tbody tr:hover td:first-child{background:var(--jr-gelo);}
+/* Freeze first data row (Faturamento Total) */
+tbody tr:first-child td{
+  position:sticky;
+  top:33px;
+  z-index:1;
+  background:var(--jr-white);
+  border-bottom:2px solid var(--jr-gold);
+  font-weight:700;
+  box-shadow:0 2px 4px rgba(0,0,0,.08);
+}
+tbody tr:first-child td:first-child{
+  position:sticky;
+  left:0;
+  top:33px;
+  z-index:4;
+  background:var(--jr-white);
 }
 tbody tr:hover td{background:var(--jr-gelo);}
-tbody tr:hover td:first-child{background:var(--jr-gelo);}
 tbody tr:last-child td{border-bottom:none;}
 
 /* Row types */
