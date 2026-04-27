@@ -1782,9 +1782,13 @@ function init(){
   Promise.all([
     loadDREFromSupabase(),
     loadBalFromSupabase(),
-    loadPlanoFromSupabase()
+    loadPlanoFromSupabase(),
+    loadFCFromSupabase()
   ]).then(()=>{
     buildKPI();buildDRE();buildBal();buildPlano(PLANO);buildDashboard();
+    // Rebuild FC if tab is visible
+    const fcTab=document.getElementById('t-fc');
+    if(fcTab&&fcTab.style.display!=='none'){fcCalc();buildFC();}
   });
   // Start realtime sync
   startRealtime();
@@ -3458,11 +3462,7 @@ async function loadFCFromSupabase(){
 }
 
 // Load FC on startup silently
-loadFCFromSupabase().then(()=>{
-  fcCalc();
-  const tab=document.getElementById('t-fc');
-  if(tab&&tab.style.display!=='none')buildFC();
-});
+// FC loads after login via Promise.all in init()
 
 // ══════════════════════════════════════════════════════════════
 // 5 — META VS REALIZADO COM BARRA DE PROGRESSO
