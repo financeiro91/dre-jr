@@ -678,12 +678,17 @@ tbody tr:last-child td{border-bottom:none;}
       </div>
       <div class="fbar">
         <input class="srch" type="text" placeholder="Buscar ação ou responsável..." oninput="filterPlano(this.value)" id="plano-q">
-        <select class="sel" id="plano-f" onchange="filterPlano(document.getElementById('plano-q').value)">
-          <option value="">Todos os status</option>
-          <option>Realizada</option><option>Em andamento</option>
-          <option>Atrasada</option><option>Cancelada</option>
-          <option>Falta data</option><option>Não iniciada</option>
-        </select>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <span style="font-size:.72rem;color:var(--jr-gray);font-weight:600">Status:</span>
+          ${['Realizada','Em andamento','Atrasada','Cancelada','Falta data','Não iniciada'].map(s=>{
+            const id='pf_'+s.replace(/\s/g,'_');
+            const color={'Realizada':'#2E7D32','Em andamento':'#1565C0','Atrasada':'#B71C1C','Cancelada':'#616161','Falta data':'#E65100','Não iniciada':'#4A148C'}[s]||'#555';
+            return`<label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:.72rem;padding:3px 7px;border-radius:12px;border:1px solid ${color};color:${color};white-space:nowrap">
+              <input type="checkbox" id="${id}" checked onchange="filterPlano(document.getElementById('plano-q').value)" style="cursor:pointer;accent-color:${color}"> ${s}
+            </label>`;
+          }).join('')}
+          <button class="tbtn" style="font-size:.68rem;padding:3px 8px" onclick="toggleAllPlanoStatus()">Todos/Nenhum</button>
+        </div>
       </div>
       <div class="twrap"><table><thead id="plano-h"></thead><tbody id="plano-b"></tbody></table></div>
     </div>
@@ -2441,12 +2446,12 @@ function buildPlano(rows){
   const canEdit=editPlano&&CU?.role!=='viewer';
   document.getElementById('plano-h').innerHTML=`<tr>
     <th style="width:60px;text-align:center">Nº</th>
-    <th style="text-align:left;min-width:320px">Ação / Etapa</th>
-    <th style="min-width:110px;text-align:left">Responsável</th>
-    <th style="min-width:95px">Início</th>
-    <th style="min-width:95px">Término</th>
-    <th style="min-width:140px">Status / Farol</th>
-    <th style="text-align:left;min-width:200px">Observação da Etapa</th>
+    <th style="text-align:left;min-width:260px;max-width:320px">Ação / Etapa</th>
+    <th style="min-width:90px;max-width:110px;text-align:left">Responsável</th>
+    <th style="min-width:85px">Início</th>
+    <th style="min-width:85px">Término</th>
+    <th style="min-width:120px">Status</th>
+    <th style="text-align:left;min-width:150px">Observação</th>
   </tr>`;
   document.getElementById('plano-b').innerHTML=rows.map((r)=>{
     const ri=PLANO.indexOf(r);
@@ -2466,24 +2471,24 @@ function buildPlano(rows){
         <span style="color:var(--jr-gray2);margin-right:4px">${r[0]}</span>
         <button onclick="delPlanoRow(${ri})" title="Excluir ação" style="background:rgba(180,0,0,.85);color:#fff;border:none;border-radius:3px;font-size:.65rem;padding:2px 5px;cursor:pointer;vertical-align:middle">✕</button>
       </td>
-      <td class="td-edit td-plano" onclick="inlineEditPlanoCell(this,${ri},1)" title="Clique para editar">
+      <td class="td-edit td-plano" onclick="inlineEditPlanoCell(this,${ri},1)" title="Clique para editar" style="max-width:320px;overflow:hidden;text-overflow:ellipsis">
         <span style="color:var(--jr-dark)">${r[1]||'—'}</span>
       </td>
-      <td class="td-edit td-plano" onclick="inlineEditPlanoCell(this,${ri},2)" title="Clique para editar">
+      <td class="td-edit td-plano" onclick="inlineEditPlanoCell(this,${ri},2)" title="Clique para editar" style="max-width:110px;overflow:hidden;text-overflow:ellipsis">
         <span style="color:var(--jr-gold3);font-weight:600">${r[2]||'—'}</span>
       </td>
-      <td class="td-edit td-plano" onclick="inlineEditPlanoCell(this,${ri},3)" title="Clique para editar">
+      <td class="td-edit td-plano" onclick="inlineEditPlanoCell(this,${ri},3)" title="Clique para editar" style="white-space:nowrap">
         <span style="font-family:'Roboto Mono',monospace;font-size:0.76rem">${r[3]||'—'}</span>
       </td>
-      <td class="td-edit td-plano" onclick="inlineEditPlanoCell(this,${ri},4)" title="Clique para editar">
+      <td class="td-edit td-plano" onclick="inlineEditPlanoCell(this,${ri},4)" title="Clique para editar" style="white-space:nowrap">
         <span style="font-family:'Roboto Mono',monospace;font-size:0.76rem">${r[4]||'—'}</span>
       </td>
       <td>
-        <select class="sel-inline" onchange="savePlanoField(${ri},5,this.value)">
+        <select class="sel-inline" style="font-size:.72rem;padding:2px 4px" onchange="savePlanoField(${ri},5,this.value)">
           ${['Realizada','Em andamento','Atrasada','Cancelada','Falta data','Não iniciada'].map(s=>`<option${r[5]===s?' selected':''}>${s}</option>`).join('')}
         </select>
       </td>
-      <td class="td-edit td-plano" onclick="inlineEditPlanoCell(this,${ri},6)" title="Clique para editar">
+      <td class="td-edit td-plano" onclick="inlineEditPlanoCell(this,${ri},6)" title="Clique para editar" style="max-width:200px;overflow:hidden;text-overflow:ellipsis">
         <span style="color:var(--jr-gray);font-size:0.76rem">${r[6]||'—'}</span>
       </td>
     </tr>`;
@@ -2548,8 +2553,27 @@ function savePlanoField(ri,ci,val){
   buildPlano(PLANO);toast('Atualizado!');
 }
 function filterPlano(q){
-  const sf=document.getElementById('plano-f').value;
-  buildPlano(PLANO.filter(r=>(r[1]+r[2]).toLowerCase().includes(q.toLowerCase())&&(!sf||r[5]===sf)));
+  const statuses=['Realizada','Em andamento','Atrasada','Cancelada','Falta data','Não iniciada'];
+  const checked=statuses.filter(s=>{
+    const el=document.getElementById('pf_'+s.replace(/\s/g,'_'));
+    return el ? el.checked : true;
+  });
+  buildPlano(PLANO.filter(r=>
+    (r[1]+r[2]).toLowerCase().includes((q||'').toLowerCase()) &&
+    checked.includes(r[5])
+  ));
+}
+function toggleAllPlanoStatus(){
+  const statuses=['Realizada','Em andamento','Atrasada','Cancelada','Falta data','Não iniciada'];
+  const anyChecked=statuses.some(s=>{
+    const el=document.getElementById('pf_'+s.replace(/\s/g,'_'));
+    return el && el.checked;
+  });
+  statuses.forEach(s=>{
+    const el=document.getElementById('pf_'+s.replace(/\s/g,'_'));
+    if(el) el.checked=!anyChecked;
+  });
+  filterPlano(document.getElementById('plano-q').value);
 }
 function toggleEditPlano(){
   if(CU?.role==='viewer'){toast('Sem permissão','error');return;}
