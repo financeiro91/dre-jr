@@ -678,15 +678,26 @@ tbody tr:last-child td{border-bottom:none;}
       </div>
       <div class="fbar">
         <input class="srch" type="text" placeholder="Buscar ação ou responsável..." oninput="filterPlano(this.value)" id="plano-q">
-        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px">
           <span style="font-size:.72rem;color:var(--jr-gray);font-weight:600">Status:</span>
-          ${['Realizada','Em andamento','Atrasada','Cancelada','Falta data','Não iniciada'].map(s=>{
-            const id='pf_'+s.replace(/\s/g,'_');
-            const color={'Realizada':'#2E7D32','Em andamento':'#1565C0','Atrasada':'#B71C1C','Cancelada':'#616161','Falta data':'#E65100','Não iniciada':'#4A148C'}[s]||'#555';
-            return`<label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:.72rem;padding:3px 7px;border-radius:12px;border:1px solid ${color};color:${color};white-space:nowrap">
-              <input type="checkbox" id="${id}" checked onchange="filterPlano(document.getElementById('plano-q').value)" style="cursor:pointer;accent-color:${color}"> ${s}
-            </label>`;
-          }).join('')}
+          <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:.72rem;padding:3px 8px;border-radius:12px;border:1px solid #2E7D32;color:#2E7D32;white-space:nowrap">
+            <input type="checkbox" id="pf_Realizada" checked onchange="filterPlano(document.getElementById('plano-q').value)"> Realizada
+          </label>
+          <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:.72rem;padding:3px 8px;border-radius:12px;border:1px solid #1565C0;color:#1565C0;white-space:nowrap">
+            <input type="checkbox" id="pf_Em_andamento" checked onchange="filterPlano(document.getElementById('plano-q').value)"> Em andamento
+          </label>
+          <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:.72rem;padding:3px 8px;border-radius:12px;border:1px solid #B71C1C;color:#B71C1C;white-space:nowrap">
+            <input type="checkbox" id="pf_Atrasada" checked onchange="filterPlano(document.getElementById('plano-q').value)"> Atrasada
+          </label>
+          <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:.72rem;padding:3px 8px;border-radius:12px;border:1px solid #616161;color:#616161;white-space:nowrap">
+            <input type="checkbox" id="pf_Cancelada" checked onchange="filterPlano(document.getElementById('plano-q').value)"> Cancelada
+          </label>
+          <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:.72rem;padding:3px 8px;border-radius:12px;border:1px solid #E65100;color:#E65100;white-space:nowrap">
+            <input type="checkbox" id="pf_Falta_data" checked onchange="filterPlano(document.getElementById('plano-q').value)"> Falta data
+          </label>
+          <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:.72rem;padding:3px 8px;border-radius:12px;border:1px solid #4A148C;color:#4A148C;white-space:nowrap">
+            <input type="checkbox" id="pf_Não_iniciada" checked onchange="filterPlano(document.getElementById('plano-q').value)"> Não iniciada
+          </label>
           <button class="tbtn" style="font-size:.68rem;padding:3px 8px" onclick="toggleAllPlanoStatus()">Todos/Nenhum</button>
         </div>
       </div>
@@ -2553,9 +2564,16 @@ function savePlanoField(ri,ci,val){
   buildPlano(PLANO);toast('Atualizado!');
 }
 function filterPlano(q){
-  const statuses=['Realizada','Em andamento','Atrasada','Cancelada','Falta data','Não iniciada'];
-  const checked=statuses.filter(s=>{
-    const el=document.getElementById('pf_'+s.replace(/\s/g,'_'));
+  const statusMap={
+    'Realizada':'pf_Realizada',
+    'Em andamento':'pf_Em_andamento',
+    'Atrasada':'pf_Atrasada',
+    'Cancelada':'pf_Cancelada',
+    'Falta data':'pf_Falta_data',
+    'Não iniciada':'pf_Não_iniciada'
+  };
+  const checked=Object.keys(statusMap).filter(s=>{
+    const el=document.getElementById(statusMap[s]);
     return el ? el.checked : true;
   });
   buildPlano(PLANO.filter(r=>
@@ -2564,13 +2582,13 @@ function filterPlano(q){
   ));
 }
 function toggleAllPlanoStatus(){
-  const statuses=['Realizada','Em andamento','Atrasada','Cancelada','Falta data','Não iniciada'];
-  const anyChecked=statuses.some(s=>{
-    const el=document.getElementById('pf_'+s.replace(/\s/g,'_'));
+  const ids=['pf_Realizada','pf_Em_andamento','pf_Atrasada','pf_Cancelada','pf_Falta_data','pf_Não_iniciada'];
+  const anyChecked=ids.some(id=>{
+    const el=document.getElementById(id);
     return el && el.checked;
   });
-  statuses.forEach(s=>{
-    const el=document.getElementById('pf_'+s.replace(/\s/g,'_'));
+  ids.forEach(id=>{
+    const el=document.getElementById(id);
     if(el) el.checked=!anyChecked;
   });
   filterPlano(document.getElementById('plano-q').value);
