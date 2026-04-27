@@ -3354,11 +3354,7 @@ function delFCSemana(si){
   FC.semanas.splice(si,1);
   FC.linhas.forEach(l=>{ delete l.vals[s]; });
   // Save updated semanas list
-  sbFetch('fluxo_caixa',{
-    method:'POST',
-    prefer:'resolution=merge-duplicates',
-    body:JSON.stringify({linha_idx:-1,semana:'__semanas__',valor:JSON.stringify(FC.semanas),descricao:'semanas',tipo:'meta'})
-  }).catch(()=>{});
+  saveFCSemanas();
   buildFC();
   toast(`Semana "${s}" excluída!`);
 }
@@ -3379,12 +3375,7 @@ function addFCSemana(){
   if(!label||!label.trim())return;
   const s=label.trim();
   FC.semanas.push(s);
-  // Persist the semanas list to Supabase (using linha_idx=-1 as metadata)
-  sbFetch('fluxo_caixa',{
-    method:'POST',
-    prefer:'resolution=merge-duplicates',
-    body:JSON.stringify({linha_idx:-1,semana:'__semanas__',valor:JSON.stringify(FC.semanas),descricao:'semanas',tipo:'meta'})
-  }).catch(e=>console.warn('FC semanas save err:',e));
+  saveFCSemanas();
   buildFC();
   toast(`Semana "${s}" adicionada!`);
 }
@@ -3401,19 +3392,36 @@ function addFCLinha(tipo){
   toast(`Linha "${desc.trim()}" adicionada!`);
 }
 
+// Helper: save semanas list with PATCH/POST
+function saveFCSemanas(){
+  const val=JSON.stringify(FC.semanas);
+  sbFetch('fluxo_caixa?linha_idx=eq.-1&semana=eq.__semanas__',{
+    method:'PATCH',
+    body:JSON.stringify({valor:val})
+  }).then(r=>{
+    if(r===null){
+      return sbFetch('fluxo_caixa',{
+        method:'POST',
+        body:JSON.stringify({linha_idx:-1,semana:'__semanas__',valor:val,descricao:'semanas',tipo:'meta'})
+      });
+    }
+    console.log('✅ FC semanas salvas');
+  }).catch(e=>console.warn('FC semanas err:',e));
+}
+
 function saveFCMetadata(){
-  // Save semanas list
-  sbFetch('fluxo_caixa',{
-    method:'POST',
-    prefer:'resolution=merge-duplicates',
-    body:JSON.stringify({linha_idx:-1,semana:'__semanas__',valor:JSON.stringify(FC.semanas),descricao:'semanas',tipo:'meta'})
-  }).catch(()=>{});
-  // Save linhas metadata (desc and tipo for each line)
+  saveFCSemanas();
   FC.linhas.forEach((l,li)=>{
-    sbFetch('fluxo_caixa',{
-      method:'POST',
-      prefer:'resolution=merge-duplicates',
-      body:JSON.stringify({linha_idx:li,semana:'__meta__',valor:'',descricao:l.desc,tipo:l.tipo})
+    sbFetch(`fluxo_caixa?linha_idx=eq.${li}&semana=eq.__meta__`,{
+      method:'PATCH',
+      body:JSON.stringify({descricao:l.desc,tipo:l.tipo})
+    }).then(r=>{
+      if(r===null){
+        sbFetch('fluxo_caixa',{
+          method:'POST',
+          body:JSON.stringify({linha_idx:li,semana:'__meta__',valor:'',descricao:l.desc,tipo:l.tipo})
+        }).catch(()=>{});
+      }
     }).catch(()=>{});
   });
 }
