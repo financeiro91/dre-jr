@@ -3282,13 +3282,18 @@ function buildFC(){
 function saveFCCell(li, semana, val){
   if(val===null||val===undefined||val==='')return;
   const strVal=String(val);
-  const num=strVal.startsWith('=')?strVal:parseFloat(strVal.replace(/\./g,'').replace(',','.'))||0;
+  // Parse PT-BR input: "1.234,56" → 1234.56
+  const num=strVal.startsWith('=')?strVal:parseFloat(
+    strVal.includes(',') ? strVal.replace(/\./g,'').replace(',','.') : strVal
+  )||0;
   FC.linhas[li].vals[semana]=num;
-  const body={linha_idx:li,semana,valor:strVal,descricao:FC.linhas[li].desc||'',tipo:FC.linhas[li].tipo||''};
+  // Save as plain number string (dot decimal) for consistent loading
+  const valorSave=typeof num==='string'?num:String(num);
+  const body={linha_idx:li,semana,valor:valorSave,descricao:FC.linhas[li].desc||'',tipo:FC.linhas[li].tipo||''};
   // PATCH if exists, POST if new
   sbFetch(`fluxo_caixa?linha_idx=eq.${li}&semana=eq.${encodeURIComponent(semana)}`,{
     method:'PATCH',
-    body:JSON.stringify({valor:strVal})
+    body:JSON.stringify({valor:valorSave})
   }).then(res=>{
     if(res===null){
       return sbFetch('fluxo_caixa',{method:'POST',body:JSON.stringify(body)});
@@ -3434,9 +3439,19 @@ async function loadFCFromSupabase(){
       if(r.semana==='__meta__')return;
       if(r.linha_idx<FC.linhas.length){
         const v=r.valor;
-        // Convert to number if possible, keep formula strings
-        const num=(v&&v.startsWith&&v.startsWith('='))?v:parseFloat(String(v).replace(/\./g,'').replace(',','.'));
-        FC.linhas[r.linha_idx].vals[r.semana]=isNaN(num)?+v||0:num;
+        if(!v&&v!=='0') return;
+        let num;
+        if(v&&v.startsWith&&v.startsWith('=')){
+          num=v; // keep formula as-is
+        } else {
+          const s=String(v).trim();
+          // If has comma → PT-BR format: "1.234,56" → remove dots, comma→dot
+          // If no comma → already decimal dot: "969523.41" → parse directly
+          num = s.includes(',')
+            ? parseFloat(s.replace(/\./g,'').replace(',','.'))
+            : parseFloat(s);
+        }
+        FC.linhas[r.linha_idx].vals[r.semana]=isNaN(num)?0:num;
       }
     });
   }catch(e){console.warn('loadFC error:',e);}
