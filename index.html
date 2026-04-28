@@ -282,7 +282,70 @@ tbody td:first-child{
   position:sticky;left:0;background:var(--jr-white);z-index:2;
 }
 tbody tr:hover td:first-child{background:var(--jr-gelo);}
-/* Freeze first data row (Faturamento Total) */
+/* ══ BALANÇO — Freeze header + first col ══ */
+#t-bal thead th{
+  position:sticky;top:0;z-index:3;
+  background:var(--jr-dark);color:var(--jr-gray2);
+}
+#t-bal thead th:first-child{
+  position:sticky;left:0;top:0;z-index:5;
+  background:var(--jr-dark);
+}
+#t-bal tbody td:first-child{
+  position:sticky;left:0;z-index:2;
+  background:var(--jr-white);
+  font-weight:500;color:var(--jr-dark);
+  border-right:2px solid var(--jr-gelo3);
+  min-width:200px;max-width:240px;
+}
+#t-bal tbody tr.r-total td:first-child{
+  background:#F5F1E8;
+}
+#t-bal tbody tr:hover td:first-child{background:var(--jr-gelo);}
+
+/* ══ PLANO DE AÇÃO — Freeze header + Nº col ══ */
+#t-plano thead th{
+  position:sticky;top:0;z-index:3;
+  background:var(--jr-dark);color:var(--jr-gray2);
+}
+#t-plano thead th:first-child{
+  position:sticky;left:0;top:0;z-index:5;
+  background:var(--jr-dark);
+}
+#t-plano tbody td:first-child{
+  position:sticky;left:0;z-index:2;
+  background:var(--jr-white);
+  border-right:2px solid var(--jr-gelo3);
+}
+#t-plano tbody tr:hover td:first-child{background:var(--jr-gelo);}
+
+/* ══ FLUXO DE CAIXA — Freeze header + first 2 cols ══ */
+#fc-table thead th{
+  position:sticky;top:0;z-index:3;
+  background:var(--jr-dark);
+}
+#fc-table thead th:first-child{
+  position:sticky;left:0;top:0;z-index:5;
+  background:var(--jr-dark);min-width:80px;
+}
+#fc-table thead th:nth-child(2){
+  position:sticky;left:80px;top:0;z-index:5;
+  background:var(--jr-dark);min-width:180px;
+}
+#fc-table tbody td:first-child{
+  position:sticky;left:0;z-index:2;
+  background:var(--jr-white);
+  min-width:80px;border-right:1px solid var(--jr-gelo3);
+}
+#fc-table tbody td:nth-child(2){
+  position:sticky;left:80px;z-index:2;
+  background:var(--jr-white);
+  min-width:180px;border-right:2px solid var(--jr-gelo3);
+}
+#fc-table tbody tr:hover td:first-child,
+#fc-table tbody tr:hover td:nth-child(2){background:var(--jr-gelo);}
+#fc-table tbody tr.r-total td:first-child,
+#fc-table tbody tr.r-total td:nth-child(2){background:#F5F1E8;}
 tbody tr:first-child td{
   position:sticky;
   top:33px;
@@ -689,7 +752,7 @@ tbody tr:last-child td{border-bottom:none;}
           <button class="tbtn" id="bal-edit-btn" onclick="toggleEditBal()">✎ Editar</button>
         </div>
       </div>
-      <div class="twrap"><table><thead id="bal-h"></thead><tbody id="bal-b"></tbody></table></div>
+      <div class="twrap"><table id="t-bal"><thead id="bal-h"></thead><tbody id="bal-b"></tbody></table></div>
     </div>
 
     <!-- PLANO -->
@@ -726,7 +789,7 @@ tbody tr:last-child td{border-bottom:none;}
           <button class="tbtn" style="font-size:.68rem;padding:3px 8px" onclick="toggleAllPlanoStatus()">Todos/Nenhum</button>
         </div>
       </div>
-      <div class="twrap"><table><thead id="plano-h"></thead><tbody id="plano-b"></tbody></table></div>
+      <div class="twrap"><table id="t-plano"><thead id="plano-h"></thead><tbody id="plano-b"></tbody></table></div>
     </div>
 
     <!-- FLUXO DE CAIXA SEMANAL -->
