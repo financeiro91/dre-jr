@@ -996,7 +996,8 @@ async function sbFetch(path, opts={}){
   if(opts.method==='POST'){
     headers['Prefer'] = opts.prefer ? opts.prefer : 'return=minimal';
   } else if(opts.method==='PATCH'){
-    headers['Prefer'] = 'return=minimal';
+    // return=representation returns updated rows so we can detect 0 matches
+    headers['Prefer'] = 'return=representation';
   } else if(opts.method==='DELETE'){
     headers['Prefer'] = 'return=minimal';
   }
@@ -1010,7 +1011,8 @@ async function sbFetch(path, opts={}){
     throw new Error(`Supabase ${res.status}: ${err}`);
   }
   const txt = await res.text();
-  return txt ? JSON.parse(txt) : null;
+  if(!txt) return opts.method==='PATCH' ? [] : null;
+  return JSON.parse(txt);
 }
 
 // ── PENDING ──────────────────────────────────────────────────
@@ -1473,7 +1475,7 @@ const save=()=>{
         method:'PATCH',
         body:JSON.stringify({valor:SE[periodo][campo]})
       }).then(r=>{
-        if(r===null) sbFetch('dre_dados',{method:'POST',body:JSON.stringify({periodo,campo,valor:SE[periodo][campo]})}).catch(()=>{});
+        if(!r||Array.isArray(r)&&r.length===0) sbFetch('dre_dados',{method:'POST',body:JSON.stringify({periodo,campo,valor:SE[periodo][campo]})}).catch(()=>{});
       }).catch(()=>{});
     });
   });
@@ -1489,7 +1491,7 @@ const saveX=()=>{
         method:'PATCH',
         body:JSON.stringify({valor:allFields[campo]??''})
       }).then(r=>{
-        if(r===null) sbFetch('dre_dados',{method:'POST',body:JSON.stringify({periodo,campo,valor:allFields[campo]??''})}).catch(()=>{});
+        if(!r||Array.isArray(r)&&r.length===0) sbFetch('dre_dados',{method:'POST',body:JSON.stringify({periodo,campo,valor:allFields[campo]??''})}).catch(()=>{});
       }).catch(()=>{});
     });
   });
@@ -2063,7 +2065,7 @@ function saveEditDRE(per,rowId,inp){
     method:'PATCH',
     body:JSON.stringify({valor:nv})
   }).then(r=>{
-    if(r===null){
+    if(!r||Array.isArray(r)&&r.length===0){
       return sbFetch('dre_dados',{
         method:'POST',
         body:JSON.stringify({periodo:per,campo:rowId,valor:nv})
@@ -2427,7 +2429,7 @@ function saveBalToSupabase(){
     method:'PATCH',
     body:JSON.stringify({valor:JSON.stringify(BAL_COLS)})
   }).then(r=>{
-    if(r===null) sbFetch('balanco_dados',{method:'POST',body:JSON.stringify({row_id:'__cols__',col_idx:0,valor:JSON.stringify(BAL_COLS)})}).catch(()=>{});
+    if(!r||Array.isArray(r)&&r.length===0) sbFetch('balanco_dados',{method:'POST',body:JSON.stringify({row_id:'__cols__',col_idx:0,valor:JSON.stringify(BAL_COLS)})}).catch(()=>{});
   }).catch(()=>{});
   // Save all editable values
   BAL_ROWS.forEach(r=>{
@@ -3424,7 +3426,7 @@ function saveFCSemanas(){
     method:'PATCH',
     body:JSON.stringify({valor:val})
   }).then(r=>{
-    if(r===null){
+    if(!r||Array.isArray(r)&&r.length===0){
       return sbFetch('fluxo_caixa',{
         method:'POST',
         body:JSON.stringify({linha_idx:-1,semana:'__semanas__',valor:val,descricao:'semanas',tipo:'meta'})
@@ -3441,7 +3443,7 @@ function saveFCMetadata(){
       method:'PATCH',
       body:JSON.stringify({descricao:l.desc,tipo:l.tipo})
     }).then(r=>{
-      if(r===null){
+      if(!r||Array.isArray(r)&&r.length===0){
         sbFetch('fluxo_caixa',{
           method:'POST',
           body:JSON.stringify({linha_idx:li,semana:'__meta__',valor:'',descricao:l.desc,tipo:l.tipo})
