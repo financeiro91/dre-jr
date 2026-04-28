@@ -319,7 +319,24 @@ tbody tr:hover td:first-child{background:var(--jr-gelo);}
 }
 #t-plano tbody tr:hover td:first-child{background:var(--jr-gelo);}
 
-/* ══ FLUXO DE CAIXA — Freeze header + first 2 cols ══ */
+/* ══ FLUXO DE CAIXA — Freeze all 4 header rows + first 2 cols ══ */
+#fc-table thead tr:nth-child(1) th,
+#fc-table thead tr:nth-child(1) td{
+  position:sticky;top:0;z-index:3;
+  background:var(--jr-dark);
+}
+#fc-table thead tr:nth-child(2) th,
+#fc-table thead tr:nth-child(2) td{
+  position:sticky;top:35px;z-index:3;
+}
+#fc-table thead tr:nth-child(3) th,
+#fc-table thead tr:nth-child(3) td{
+  position:sticky;top:65px;z-index:3;
+}
+#fc-table thead tr:nth-child(4) th,
+#fc-table thead tr:nth-child(4) td{
+  position:sticky;top:93px;z-index:3;
+}
 #fc-table thead th{
   position:sticky;top:0;z-index:3;
   background:var(--jr-dark);
@@ -331,6 +348,17 @@ tbody tr:hover td:first-child{background:var(--jr-gelo);}
 #fc-table thead th:nth-child(2){
   position:sticky;left:80px;top:0;z-index:5;
   background:var(--jr-dark);min-width:180px;
+}
+/* First 2 cols of header rows 2-4 also need left sticky */
+#fc-table thead tr:nth-child(2) td:first-child,
+#fc-table thead tr:nth-child(3) td:first-child,
+#fc-table thead tr:nth-child(4) td:first-child{
+  position:sticky;left:0;z-index:5;
+}
+#fc-table thead tr:nth-child(2) td:nth-child(2),
+#fc-table thead tr:nth-child(3) td:nth-child(2),
+#fc-table thead tr:nth-child(4) td:nth-child(2){
+  position:sticky;left:80px;z-index:4;
 }
 #fc-table tbody td:first-child{
   position:sticky;left:0;z-index:2;
