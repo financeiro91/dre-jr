@@ -2201,10 +2201,22 @@ function confirmNewMonth(){
   // Remove from deleted blacklist if it was previously deleted
   DELETED_COLS=DELETED_COLS.filter(c=>c!==rk);
   localStorage.setItem('jr4_deleted_cols',JSON.stringify(DELETED_COLS));
+  // Save ALL fields to Supabase immediately
+  const allFields={...b};
+  Object.keys(allFields).forEach(campo=>{
+    const valor=allFields[campo]??'';
+    sbFetch(`dre_dados?periodo=eq.${encodeURIComponent(rk)}&campo=eq.${encodeURIComponent(campo)}`,{
+      method:'PATCH',body:JSON.stringify({valor:String(valor)})
+    }).then(r=>{
+      if(!r||Array.isArray(r)&&r.length===0){
+        sbFetch('dre_dados',{method:'POST',body:JSON.stringify({periodo:rk,campo,valor:String(valor)})}).catch(()=>{});
+      }
+    }).catch(()=>{});
+  });
   saveX(); recalcAcum();
   pushH({type:'newcol',user:CU.label,ts:ts(),icon:'➕',col:rk,from:cf||'em branco'});
   activePer=rk; cM('m-month'); buildPerBtns(); buildKPI(); buildDRE();
-  toast(`Coluna "${rk}" criada — Acum 2026 Real atualizado.`);
+  toast(`Coluna "${rk}" criada e salva no banco!`);
 }
 // ══ ADD ROW ══
 function onRowTypeChange(){
@@ -3230,7 +3242,15 @@ function buildDashboard(per){
 
 // Estrutura de dados FC
 let FC = {
-  semanas: ['9/3 a 15/3','14/3 a 20/3','21/3 a 27/3','28/3 a 2/4','03/04 a 10/04','11/04 a 17/04'],
+  // Restore semanas from localStorage first, Supabase will update on load
+  semanas: (()=>{
+    try{
+      const saved=localStorage.getItem('jr_fc_semanas');
+      if(saved){const arr=JSON.parse(saved);if(Array.isArray(arr)&&arr.length>0)return arr;}
+    }catch(e){}
+    // Default semanas — includes all known semanas up to today
+    return ['9/3 a 15/3','14/3 a 20/3','21/3 a 27/3','28/3 a 2/4','03/04 a 10/04','11/04 a 17/04','18-04 a 24-04','25-04 A 30-04'];
+  })(),
   realizado: {}, // semana -> valor realizado (FC Realizado linha 2)
   linhas: [
     // [tipo, descricao, {semana: valor}, formula_acum]
@@ -3510,8 +3530,10 @@ function addFCLinha(tipo){
   toast(`Linha "${desc.trim()}" adicionada!`);
 }
 
-// Helper: save semanas list with PATCH/POST
+// Helper: save semanas list with PATCH/POST + localStorage backup
 function saveFCSemanas(){
+  // Always save to localStorage as backup
+  localStorage.setItem('jr_fc_semanas', JSON.stringify(FC.semanas));
   const val=JSON.stringify(FC.semanas);
   sbFetch('fluxo_caixa?linha_idx=eq.-1&semana=eq.__semanas__',{
     method:'PATCH',
@@ -3521,9 +3543,9 @@ function saveFCSemanas(){
       return sbFetch('fluxo_caixa',{
         method:'POST',
         body:JSON.stringify({linha_idx:-1,semana:'__semanas__',valor:val,descricao:'semanas',tipo:'meta'})
-      });
+      }).then(()=>console.log('✅ FC semanas criadas no Supabase'));
     }
-    console.log('✅ FC semanas salvas');
+    console.log('✅ FC semanas atualizadas:', JSON.parse(val).length, 'semanas');
   }).catch(e=>console.warn('FC semanas err:',e));
 }
 
@@ -3547,23 +3569,48 @@ function saveFCMetadata(){
 async function loadFCFromSupabase(){
   try{
     const rows=await sbFetch('fluxo_caixa?select=*&order=linha_idx.asc');
-    if(!rows||!rows.length)return;
+    if(!rows||!rows.length){
+      // Try localStorage backup
+      const backup=localStorage.getItem('jr_fc_semanas');
+      if(backup){
+        try{
+          const saved=JSON.parse(backup);
+          if(Array.isArray(saved)&&saved.length>0) FC.semanas=saved;
+          console.log('✅ FC semanas restauradas do localStorage:', saved.length);
+        }catch(e){}
+      }
+      return;
+    }
 
-    // 1. Restore semanas list
+    // 1. Restore semanas list from Supabase
     const semanasRow=rows.find(r=>r.linha_idx===-1&&r.semana==='__semanas__');
     if(semanasRow){
       try{
         const saved=JSON.parse(semanasRow.valor);
         if(Array.isArray(saved)&&saved.length>0){
-          // Merge: add any saved semanas not already in FC.semanas
-          saved.forEach(s=>{ if(!FC.semanas.includes(s)) FC.semanas.push(s); });
-          // Preserve order from saved
-          FC.semanas=saved.filter(s=>true);
+          FC.semanas=saved;
+          // Update localStorage backup
+          localStorage.setItem('jr_fc_semanas', JSON.stringify(saved));
+          console.log('✅ FC semanas carregadas:', saved.length, 'semanas:', saved.join(', '));
         }
       }catch(e){console.warn('FC semanas parse err:',e);}
+    } else {
+      // No semanas in DB — try localStorage
+      const backup=localStorage.getItem('jr_fc_semanas');
+      if(backup){
+        try{
+          const saved=JSON.parse(backup);
+          if(Array.isArray(saved)&&saved.length>0){
+            FC.semanas=saved;
+            // Save to Supabase
+            saveFCSemanas();
+            console.log('✅ FC semanas restauradas do localStorage e salvas no Supabase');
+          }
+        }catch(e){}
+      }
     }
 
-    // 2. Restore cell values — convert string to number
+    // 2. Restore cell values
     rows.forEach(r=>{
       if(r.linha_idx<0)return;
       if(r.semana==='__meta__')return;
@@ -3572,11 +3619,9 @@ async function loadFCFromSupabase(){
         if(!v&&v!=='0') return;
         let num;
         if(v&&v.startsWith&&v.startsWith('=')){
-          num=v; // keep formula as-is
+          num=v;
         } else {
           const s=String(v).trim();
-          // If has comma → PT-BR format: "1.234,56" → remove dots, comma→dot
-          // If no comma → already decimal dot: "969523.41" → parse directly
           num = s.includes(',')
             ? parseFloat(s.replace(/\./g,'').replace(',','.'))
             : parseFloat(s);
@@ -3584,6 +3629,7 @@ async function loadFCFromSupabase(){
         FC.linhas[r.linha_idx].vals[r.semana]=isNaN(num)?0:num;
       }
     });
+    console.log('✅ FC carregado:', rows.filter(r=>r.linha_idx>=0&&r.semana!=='__meta__').length, 'células');
   }catch(e){console.warn('loadFC error:',e);}
 }
 
