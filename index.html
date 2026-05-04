@@ -2266,7 +2266,7 @@ function renumberPlano(){
   PLANO.forEach(r=>{
     const body={numero:r[0],acao:r[1],responsavel:r[2],inicio:r[3],termino:r[4],status:r[5],observacao:r[6]};
     sbFetch(`plano_acao?numero=eq.${r[0]}`,{method:'PATCH',body:JSON.stringify(body)})
-      .then(res=>{ if(res===null) sbFetch('plano_acao',{method:'POST',body:JSON.stringify(body)}).catch(()=>{}); })
+      .then(res=>{ if(!res||Array.isArray(res)&&res.length===0) sbFetch('plano_acao',{method:'POST',body:JSON.stringify(body)}).catch(()=>{}); })
       .catch(e=>console.warn('plano renumber err:',e));
   });
 }
@@ -2489,7 +2489,7 @@ function saveEditBal(ri,ci,inp){
     method:'PATCH',
     body:JSON.stringify({valor:valorSave})
   }).then(res=>{
-    if(res===null){
+    if(!res||Array.isArray(res)&&res.length===0){
       return sbFetch('balanco_dados',{
         method:'POST',
         body:JSON.stringify({row_id:r.id,col_idx:ci,valor:valorSave})
@@ -2543,7 +2543,7 @@ function saveBalToSupabase(){
         method:'PATCH',
         body:JSON.stringify({valor:String(val)})
       }).then(res=>{
-        if(res===null) sbFetch('balanco_dados',{method:'POST',body:JSON.stringify({row_id:r.id,col_idx:idx,valor:String(val)})}).catch(()=>{});
+        if(!res||Array.isArray(res)&&res.length===0) sbFetch('balanco_dados',{method:'POST',body:JSON.stringify({row_id:r.id,col_idx:idx,valor:String(val)})}).catch(()=>{});
       }).catch(()=>{});
     });
   });
@@ -2690,7 +2690,7 @@ function savePlanoField(ri,ci,val){
     method:'PATCH',
     body:JSON.stringify(body)
   }).then(res=>{
-    if(res===null){
+    if(!res||Array.isArray(res)&&res.length===0){
       return sbFetch('plano_acao',{method:'POST',body:JSON.stringify(body)});
     }
   }).catch(e=>console.warn('plano save err:',e));
@@ -3437,7 +3437,7 @@ function saveFCCell(li, semana, val){
     method:'PATCH',
     body:JSON.stringify({valor:valorSave})
   }).then(res=>{
-    if(res===null){
+    if(!res||Array.isArray(res)&&res.length===0){
       return sbFetch('fluxo_caixa',{method:'POST',body:JSON.stringify(body)});
     }
     console.log(`✅ FC salvo: linha ${li}, semana ${semana}`);
