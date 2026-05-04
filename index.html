@@ -3421,30 +3421,37 @@ function buildFC(){
   }).join('');
 }
 
-function saveFCCell(li, semana, val){
+async function saveFCCell(li, semana, val){
   if(val===null||val===undefined||val==='')return;
   const strVal=String(val);
-  // Parse PT-BR input: "1.234,56" → 1234.56
   const num=strVal.startsWith('=')?strVal:parseFloat(
     strVal.includes(',') ? strVal.replace(/\./g,'').replace(',','.') : strVal
   )||0;
   FC.linhas[li].vals[semana]=num;
-  // Save as plain number string (dot decimal) for consistent loading
   const valorSave=typeof num==='string'?num:String(num);
   const body={linha_idx:li,semana,valor:valorSave,descricao:FC.linhas[li].desc||'',tipo:FC.linhas[li].tipo||''};
-  // PATCH if exists, POST if new
-  sbFetch(`fluxo_caixa?linha_idx=eq.${li}&semana=eq.${encodeURIComponent(semana)}`,{
-    method:'PATCH',
-    body:JSON.stringify({valor:valorSave})
-  }).then(res=>{
+  try{
+    // Try PATCH first
+    const res=await sbFetch(`fluxo_caixa?linha_idx=eq.${li}&semana=eq.${encodeURIComponent(semana)}`,{
+      method:'PATCH',body:JSON.stringify({valor:valorSave})
+    });
     if(!res||Array.isArray(res)&&res.length===0){
-      return sbFetch('fluxo_caixa',{method:'POST',body:JSON.stringify(body)});
+      // No row exists — POST to insert
+      await sbFetch('fluxo_caixa',{method:'POST',body:JSON.stringify(body)});
+      console.log(`✅ FC inserido: linha ${li}, semana ${semana} = ${valorSave}`);
+    } else {
+      console.log(`✅ FC atualizado: linha ${li}, semana ${semana} = ${valorSave}`);
     }
-    console.log(`✅ FC salvo: linha ${li}, semana ${semana}`);
-  }).catch(e=>{
+    // Verify save worked
+    const check=await sbFetch(`fluxo_caixa?linha_idx=eq.${li}&semana=eq.${encodeURIComponent(semana)}&select=valor`);
+    if(!check||!check.length){
+      console.warn('⚠️ Verificação falhou - tentando novamente');
+      await sbFetch('fluxo_caixa',{method:'POST',body:JSON.stringify(body)});
+    }
+  }catch(e){
     console.warn('FC save err:',e);
-    toast('Erro ao salvar','error');
-  });
+    toast('Erro ao salvar — tente novamente','error');
+  }
   buildFC();
   toast('💾 Salvo!');
 }
