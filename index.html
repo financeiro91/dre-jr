@@ -3422,35 +3422,41 @@ function buildFC(){
 }
 
 async function saveFCCell(li, semana, val){
-  if(val===null||val===undefined||val==='')return;
-  const strVal=String(val);
+  const strVal=String(val||'').trim();
   const num=strVal.startsWith('=')?strVal:parseFloat(
     strVal.includes(',') ? strVal.replace(/\./g,'').replace(',','.') : strVal
   )||0;
+
+  // Update in memory
   FC.linhas[li].vals[semana]=num;
+
+  // If value is 0 or empty — delete from DB (apagar)
+  if(!strVal || strVal==='0' || num===0){
+    try{
+      await sbFetch(`fluxo_caixa?linha_idx=eq.${li}&semana=eq.${encodeURIComponent(semana)}`,{method:'DELETE'});
+      console.log(`🗑️ FC apagado: linha ${li}, semana ${semana}`);
+    }catch(e){console.warn('FC delete err:',e);}
+    buildFC();
+    toast('🗑️ Valor apagado!');
+    return;
+  }
+
   const valorSave=typeof num==='string'?num:String(num);
   const body={linha_idx:li,semana,valor:valorSave,descricao:FC.linhas[li].desc||'',tipo:FC.linhas[li].tipo||''};
   try{
-    // Try PATCH first
     const res=await sbFetch(`fluxo_caixa?linha_idx=eq.${li}&semana=eq.${encodeURIComponent(semana)}`,{
       method:'PATCH',body:JSON.stringify({valor:valorSave})
     });
     if(!res||Array.isArray(res)&&res.length===0){
-      // No row exists — POST to insert
       await sbFetch('fluxo_caixa',{method:'POST',body:JSON.stringify(body)});
       console.log(`✅ FC inserido: linha ${li}, semana ${semana} = ${valorSave}`);
     } else {
       console.log(`✅ FC atualizado: linha ${li}, semana ${semana} = ${valorSave}`);
     }
-    // Verify save worked
-    const check=await sbFetch(`fluxo_caixa?linha_idx=eq.${li}&semana=eq.${encodeURIComponent(semana)}&select=valor`);
-    if(!check||!check.length){
-      console.warn('⚠️ Verificação falhou - tentando novamente');
-      await sbFetch('fluxo_caixa',{method:'POST',body:JSON.stringify(body)});
-    }
   }catch(e){
     console.warn('FC save err:',e);
     toast('Erro ao salvar — tente novamente','error');
+    return;
   }
   buildFC();
   toast('💾 Salvo!');
