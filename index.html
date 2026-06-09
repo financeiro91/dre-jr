@@ -2374,7 +2374,7 @@ const BAL_ROWS=[
   {id:"pl",       lbl:"Patrimônio Líquido",                         t:"f",  sums:["capSoc","lucros"], v:[]},
   // Rows 36-37 — subcontas PL
   {id:"capSoc",   lbl:"  Capital Social",                           t:"v",  v:["10.000.000,00","10.000.000,00","10.000.000,00"]},
-  {id:"lucros",   lbl:"  Lucros/Prejuizos acumulados",              t:"v",  v:["8.960.830,56","8.545.889,79","5.002.907,40"]},
+  {id:"lucros",   lbl:"  Lucros/Prejuizos acumulados",              t:"f",  fn:"luc_pre", v:[]},
   // Row 38 — linha vazia (separador)
   {id:"blank2",   lbl:"",                                           t:"blank", v:[]},
   // Row 39 — Indicadores
@@ -2396,19 +2396,26 @@ const fmtInd=n=>{if(isNaN(n)||!isFinite(n))return"-";return n.toLocaleString("pt
 function calcBal(){
   const n=BAL_COLS.length-1;
   const byId={};BAL_ROWS.forEach(r=>byId[r.id]=r);
+
+  // Pass 1: calculate sums (may need multiple passes for nested sums)
   for(let p=0;p<3;p++){
     BAL_ROWS.forEach(r=>{
       if(r.t!=="f"||!r.sums)return;
       r.v=Array.from({length:n},(_,ci)=>{let s=0;r.sums.forEach(sid=>{const sr=byId[sid];if(sr)s+=parsePT(sr.v[ci]);});return fmtBal(s);});
     });
   }
+
+  // Pass 2: calculate formula rows (fn)
   BAL_ROWS.forEach(r=>{
     if(r.t!=="f"||!r.fn)return;
     r.v=Array.from({length:n},(_,ci)=>{
       const g=id=>parsePT(byId[id]?.v[ci]);
-      const totP=g("totPass")||1,pl=g("pl"),circ=g("circ"),exig=g("exig");
+      const totAtivo=g("totAtivo"),totP=g("totPass")||1,pl=g("pl");
+      const circ=g("circ"),exig=g("exig"),capSoc=g("capSoc");
       const atCirc=g("atCirc"),rlp=g("rlp"),atPerm=g("atPerm");
       let v=0;
+      // Lucros/Prejuizos = Total Ativo - Circulante Passivo - Exigível LP - Capital Social
+      if(r.fn==="luc_pre") return fmtBal(totAtivo - circ - exig - capSoc);
       if(r.fn==="ind_pct")  v=(totP-pl)/Math.abs(pl||1);
       if(r.fn==="ind_comp") v=circ/((circ+exig)||1);
       if(r.fn==="ind_imob") v=atPerm/Math.abs(pl||1);
@@ -2518,12 +2525,22 @@ function confirmAddColBal(){
   if(BAL_COLS.includes(name)){toast("Coluna já existe","error");return;}
   const cf=document.getElementById("nc-copy").value;
   const cfi=cf?BAL_COLS.indexOf(cf)-1:-1;
+  // Last column index (for copying capSoc)
+  const lastIdx=BAL_COLS.length-2; // -1 for "Conta", then -1 for 0-based
   BAL_COLS.push(name);
-  BAL_ROWS.forEach(r=>{r.v.push(cfi>=0&&r.v[cfi]!==undefined?r.v[cfi]:"0");});
-  // Save BAL_COLS list and all new col values to Supabase
+  BAL_ROWS.forEach(r=>{
+    if(r.t==='f'||r.t==='h'||r.t==='blank'){r.v.push('0');return;}
+    // Capital Social: always copy from previous column
+    if(r.id==='capSoc'){
+      r.v.push(r.v[lastIdx]||'10.000.000,00');
+      return;
+    }
+    // Other rows: copy from selected or default 0
+    r.v.push(cfi>=0&&r.v[cfi]!==undefined?r.v[cfi]:'0');
+  });
   saveBalToSupabase();
   pushH({type:"newcol",user:CU.label,ts:ts(),icon:"➕",col:name,from:cf||"em branco"});
-  cM("m-col");buildBal();toast("Coluna \""+name+"\" adicionada e salva!");
+  cM("m-col");buildBal();toast("Coluna \""+name+"\" adicionada!");
 }
 
 function saveBalToSupabase(){
