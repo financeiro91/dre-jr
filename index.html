@@ -2066,9 +2066,13 @@ function buildDRE(){
       const disp=isPct?fmtP(v):fmtV(v);
       const c=(!isPct&&v!=null&&!isNaN(+v))?vc(v):'';
       const isAcum=d._t==='acum-plan'||d._t==='acum-real';
+      // IDs that are NOT editable in Acum 2026 Real (bkop and below)
+      const noEditAcumReal=['bkop','estq','crec','cpag','ncg','ncg_ant','caixa','banco','fcop',
+        'div12','div12p','endliq','oban','atfx','roi','bkneg'];
+      const isReadOnly = d._t==='acum-real' && noEditAcumReal.includes(row.id);
       const fmark='';
       // Editable: click directly on cell — no pencil needed
-      if(!isPct&&editMode&&CU?.role!=='viewer'){
+      if(!isPct&&!isReadOnly&&editMode&&CU?.role!=='viewer'){
         const pp=p.replace(/'/g,"\\'").replace(/\//g,'\\/');
         return`<td class="td-edit" title="Clique para editar" onclick="inlineEditDRE(this,'${pp}','${row.id}')"><span class="${c}">${disp}</span></td>`;
       }
