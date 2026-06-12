@@ -1728,19 +1728,22 @@ function recalcAcum(){
   const mr=Object.keys(PD).filter(k=>PD[k]._month&&PD[k]._t==='real');
   const nMeses=mr.length;
 
+  // Fields that should NOT be accumulated in Acum 2026 Real (bkop and below)
+  const noAccumReal=['bkop','estq','crec','cpag','ncg','ncg_ant','caixa','banco',
+    'fcop','div12','div12p','endliq','oban','atfx','roi','bkneg'];
+
   DROWS.forEach(r=>{
     if(r.type==='percent'||r.type==='blank')return;
-    // Skip auto-calculated totals — sum raw inputs only
     const autoCalc=['rl','mc','ebt','rliq','fc','bkop','ncg','fcop','endliq','oban','bkneg'];
-    if(autoCalc.includes(r.id)){
-      // Recalculate acum from monthly values (already computed above)
-      let sr=0;
-      mr.forEach(k=>{sr+=+PD[k][r.id]||0;});
-      if(PD['Acum 2026 Real'])PD['Acum 2026 Real'][r.id]=sr;
-    } else {
-      let sr=0;
-      mr.forEach(k=>{sr+=+PD[k][r.id]||0;});
-      if(PD['Acum 2026 Real'])PD['Acum 2026 Real'][r.id]=sr;
+    let sr=0;
+    mr.forEach(k=>{sr+=+PD[k][r.id]||0;});
+    // Acum 2026 Real: skip fields below bkop (leave as 0)
+    if(PD['Acum 2026 Real']){
+      if(!noAccumReal.includes(r.id)){
+        PD['Acum 2026 Real'][r.id]=sr;
+      } else {
+        PD['Acum 2026 Real'][r.id]=0;
+      }
     }
     // Acum Plano 2026 = Nova Meta Mês × number of real months
     if(PD['Acum Plano 2026']&&PD['Nova Meta Mês']){
